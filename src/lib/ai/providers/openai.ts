@@ -1,7 +1,8 @@
 import OpenAI from "openai";
-import { AIProvider, AnalyzeWalkInput } from "../provider";
-import { AnalyzeWalkOutput, AnalyzeWalkOutputSchema } from "../schemas";
+import { AIProvider, AnalyzeWalkInput, GenerateRecommendationsInput } from "../provider";
+import { AnalyzeWalkOutput, AnalyzeWalkOutputSchema, RecommendationOutput, RecommendationOutputSchema } from "../schemas";
 import { getAnalyzeWalkPrompt } from "../prompts/analyzeWalkPrompt";
+import { getRecommendPlacesPrompt } from "../prompts/recommendPlacesPrompt";
 import { zodResponseFormat } from "openai/helpers/zod";
 
 export class OpenAIProvider implements AIProvider {
@@ -46,6 +47,29 @@ export class OpenAIProvider implements AIProvider {
     const parsed = response.choices[0].message.parsed;
     if (!parsed) {
       throw new Error("Failed to parse AI output");
+    }
+
+    return parsed;
+  }
+
+  async generateRecommendations(input: GenerateRecommendationsInput): Promise<RecommendationOutput> {
+    const prompt = getRecommendPlacesPrompt(input);
+    const model = process.env.AI_TEXT_MODEL || "gpt-4o";
+
+    const response = await this.client.chat.completions.parse({
+      model,
+      messages: [
+        {
+          role: "user",
+          content: prompt,
+        }
+      ],
+      response_format: zodResponseFormat(RecommendationOutputSchema, "recommendation_output"),
+    });
+
+    const parsed = response.choices[0].message.parsed;
+    if (!parsed) {
+      throw new Error("Failed to parse recommendation output");
     }
 
     return parsed;

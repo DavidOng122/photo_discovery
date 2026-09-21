@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { DiscoveryTag } from './DiscoveryTag';
 
 interface TagData {
@@ -12,25 +12,12 @@ interface TagData {
 
 interface Props {
   tags: TagData[];
+  selectedIds: Set<string>;
+  onToggle: (id: string) => void;
+  disabled?: boolean;
 }
 
-export function DiscoveryTagSelector({ tags }: Props) {
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-
-  const toggleTag = (id: string) => {
-    setSelectedIds(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        if (next.size < 3) {
-          next.add(id);
-        }
-      }
-      return next;
-    });
-  };
-
+export function DiscoveryTagSelector({ tags, selectedIds, onToggle, disabled }: Props) {
   if (tags.length === 0) return null;
 
   return (
@@ -43,13 +30,15 @@ export function DiscoveryTagSelector({ tags }: Props) {
           <button
             key={tag.id}
             type="button"
-            onClick={() => toggleTag(tag.id)}
+            onClick={() => onToggle(tag.id)}
+            disabled={disabled}
             style={{
               background: 'none',
               border: 'none',
               padding: 0,
-              cursor: 'pointer',
+              cursor: disabled ? 'not-allowed' : 'pointer',
               textAlign: 'left',
+              opacity: disabled ? 0.7 : 1,
             }}
           >
             <DiscoveryTag label={tag.label} selected={selectedIds.has(tag.id)} />

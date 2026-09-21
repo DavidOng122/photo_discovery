@@ -16,7 +16,7 @@ export async function GET(
   const supabase = await createClient();
   const { data: walk, error } = await supabase
     .from('walks')
-    .select('status, title')
+    .select('id, status, title, location')
     .eq('id', walkId)
     .eq('user_id', user.id)
     .single();
@@ -24,15 +24,47 @@ export async function GET(
   if (error || !walk) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
-  
+
   let tags: any[] = [];
-  if (walk.status === 'TAG_SELECTION' || walk.status === 'RECOMMENDING' || walk.status === 'COMPLETED') {
+  if (['TAG_SELECTION', 'RECOMMENDING', 'COMPLETED'].includes(walk.status)) {
     const { data } = await supabase
       .from('discovery_tags')
-      .select('id, label, category, reason')
+      .select('id, label, category, reason, selected')
       .eq('walk_id', walkId);
     tags = data || [];
   }
 
-  return NextResponse.json({ walk, tags });
+  let recommendations: { places: any[] } | null = null;
+  if (walk.status === 'COMPLETED') {
+    const { data: set } = await supabase
+      .from('recommendation_sets')
+      .select('id')
+      .eq('walk_id', walkId)
+      .single();
+
+    if (set) {
+      const { data: places } = await supabase
+        .from('recommended_places')
+        .select('id, name, area, description, image_url, google_maps_query, recommended_place_tags(discovery_tags(label))')
+        .eq('recommendation_set_id', set.id);
+
+      if (places) {
+        recommendations = {
+          places: places.map((p: any) => ({
+            id: p.id,
+            name: p.name,
+            area: p.area,
+            description: p.description,
+            imageUrl: p.image_url,
+            googleMapsQuery: p.google_maps_query,
+            matchedTags: (p.recommended_place_tags ?? [])
+              .map((rpt: any) => rpt.discovery_tags?.label)
+              .filter(Boolean),
+          })),
+        };
+      }
+    }
+  }
+
+  return NextResponse.json({ walk, tags, recommendations });
 }
