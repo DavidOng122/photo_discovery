@@ -49,6 +49,19 @@ export async function GET(
         .eq('recommendation_set_id', set.id);
 
       if (places) {
+        const placeIds = places.map((p: any) => p.id);
+
+        const { data: savedRows } = await supabase
+          .from('saved_places')
+          .select('id, source_recommended_place_id')
+          .eq('user_id', user.id)
+          .in('source_recommended_place_id', placeIds);
+
+        const savedMap = new Map<string, string>();
+        for (const row of savedRows ?? []) {
+          savedMap.set(row.source_recommended_place_id, row.id);
+        }
+
         recommendations = {
           places: places.map((p: any) => ({
             id: p.id,
@@ -60,6 +73,8 @@ export async function GET(
             matchedTags: (p.recommended_place_tags ?? [])
               .map((rpt: any) => rpt.discovery_tags?.label)
               .filter(Boolean),
+            isSaved: savedMap.has(p.id),
+            savedPlaceId: savedMap.get(p.id) ?? null,
           })),
         };
       }

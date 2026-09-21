@@ -134,36 +134,23 @@ export async function POST(
     if (rpcErr) {
       console.error("save_walk_recommendations RPC error:", rpcErr);
       if (rpcErr.message?.includes("already exists")) {
-        // Idempotent: already completed, load the results instead
-        const existingResult = await loadCompletedRecommendations(supabase, walkId);
+        const existingResult = await loadCompletedRecommendations(supabase, walkId, user.id);
         if (existingResult) return NextResponse.json(existingResult);
       }
       return NextResponse.json({ error: { code: "PERSISTENCE_FAILED", message: "おすすめ場所を保存できませんでした。" } }, { status: 500 });
     }
 
-    // Return recommendation results
-    const responseBody = {
-      walkId,
-      status: "COMPLETED",
-      places: recommendationOutput.places.map((p) => ({
-        name: p.name,
-        area: p.area ?? null,
-        description: p.description,
-        imageUrl: p.imageUrl ?? null,
-        googleMapsQuery: p.googleMapsQuery,
-        matchedTags: p.matchedTags,
-      })),
-    };
-
-    return NextResponse.json(responseBody);
+    // Load the freshly persisted places (to get DB-assigned IDs + save state)
+    const freshResult = await loadCompletedRecommendations(supabase, walkId, user.id);
+    return NextResponse.json(freshResult ?? { walkId, status: "COMPLETED", places: [] });
   } catch (err: any) {
     console.error("Unhandled error in /recommend:", err);
     return NextResponse.json({ error: { code: "RECOMMENDATION_FAILED", message: "おすすめ場所を見つけられませんでした。" } }, { status: 500 });
   }
 }
 
-// Helper: load existing recommendations when walk is already COMPLETED
-async function loadCompletedRecommendations(supabase: any, walkId: string) {
+// Helper: load existing recommendations with save state
+async function loadCompletedRecommendations(supabase: any, walkId: string, userId: string) {
   const { data: set } = await supabase
     .from("recommendation_sets")
     .select("id")
@@ -179,6 +166,20 @@ async function loadCompletedRecommendations(supabase: any, walkId: string) {
 
   if (!places) return null;
 
+  const placeIds = places.map((p: any) => p.id);
+
+  // Load saved state for this user in one query
+  const { data: savedRows } = await supabase
+    .from("saved_places")
+    .select("id, source_recommended_place_id")
+    .eq("user_id", userId)
+    .in("source_recommended_place_id", placeIds);
+
+  const savedMap = new Map<string, string>();
+  for (const row of savedRows ?? []) {
+    savedMap.set(row.source_recommended_place_id, row.id);
+  }
+
   return {
     walkId,
     status: "COMPLETED",
@@ -190,6 +191,8 @@ async function loadCompletedRecommendations(supabase: any, walkId: string) {
       imageUrl: p.image_url,
       googleMapsQuery: p.google_maps_query,
       matchedTags: (p.recommended_place_tags ?? []).map((rpt: any) => rpt.discovery_tags?.label).filter(Boolean),
+      isSaved: savedMap.has(p.id),
+      savedPlaceId: savedMap.get(p.id) ?? null,
     })),
   };
 }
