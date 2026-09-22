@@ -25,6 +25,6 @@ export interface GenerateRecommendationsInput {
 }
 
 export interface AIProvider {
-  analyzeWalk(input: AnalyzeWalkInput): Promise<AnalyzeWalkOutput>;
-  generateRecommendations(input: GenerateRecommendationsInput): Promise<RecommendationOutput>;
+  analyzeWalk(input: AnalyzeWalkInput, retryCount?: number): Promise<AnalyzeWalkOutput>;
+  generateRecommendations(input: GenerateRecommendationsInput, retryCount?: number): Promise<RecommendationOutput>;
 }

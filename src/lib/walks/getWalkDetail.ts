@@ -103,7 +103,11 @@ export async function getWalkDetail(walkId: string): Promise<WalkDetail | null> 
           .in('source_recommended_place_id', placeIds);
 
         const savedMap = new Map<string, string>();
-        for (const row of savedRows ?? []) savedMap.set(row.source_recommended_place_id, row.id);
+        for (const row of savedRows ?? []) {
+          if (row.source_recommended_place_id) {
+            savedMap.set(row.source_recommended_place_id, row.id);
+          }
+        }
 
         recommendations = places.map((p: any) => ({
           id: p.id,

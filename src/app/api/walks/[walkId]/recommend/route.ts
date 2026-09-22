@@ -31,8 +31,21 @@ export async function POST(
     if (walk.user_id !== user.id) {
       return NextResponse.json({ error: { code: "UNAUTHORIZED", message: "Unauthorized" } }, { status: 403 });
     }
+    const existingResult = await loadCompletedRecommendations(supabase, walkId, user.id);
+
+    if (walk.status === "COMPLETED") {
+      if (existingResult && existingResult.places.length >= 3 && existingResult.places.length <= 5) {
+        return NextResponse.json(existingResult);
+      }
+      return NextResponse.json({ error: { code: "PERSISTENCE_INCONSISTENT", message: "Walk is completed but places are missing or incomplete." } }, { status: 500 });
+    }
+
     if (walk.status !== "RECOMMENDING") {
       return NextResponse.json({ error: { code: "INVALID_WALK_STATE", message: "Walk is not in RECOMMENDING state" } }, { status: 400 });
+    }
+
+    if (existingResult) {
+      return NextResponse.json({ error: { code: "PERSISTENCE_FAILED", message: "Orphaned recommendation set found for RECOMMENDING walk." } }, { status: 500 });
     }
 
     // Load selected tags
@@ -154,10 +167,6 @@ export async function POST(
 
     if (rpcErr) {
       console.error("save_walk_recommendations RPC error:", rpcErr);
-      if (rpcErr.message?.includes("already exists")) {
-        const existingResult = await loadCompletedRecommendations(supabase, walkId, user.id);
-        if (existingResult) return NextResponse.json(existingResult);
-      }
       return NextResponse.json({ error: { code: "PERSISTENCE_FAILED", message: "おすすめ場所を保存できませんでした。" } }, { status: 500 });
     }
 

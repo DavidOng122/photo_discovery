@@ -5,11 +5,15 @@ import { ensureAnonymousUser } from '@/lib/auth/ensureAnonymousUser';
 
 export function AnonymousAuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
-    // Check if environment variables are available before attempting to connect
-    if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-      ensureAnonymousUser().catch(console.error);
+    console.log('[Auth Debug] AnonymousAuthProvider mounted');
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    console.log(`[Auth Debug] Env check: URL exists? ${!!url}, KEY exists? ${!!key}`);
+    
+    if (url && key) {
+      ensureAnonymousUser().catch(err => console.error('[Auth Debug] Unhandled error:', err));
     } else {
-      console.warn('Supabase credentials missing. Anonymous auth skipped.');
+      console.warn('[Auth Debug] Supabase credentials missing. Anonymous auth skipped.');
     }
   }, []);
   

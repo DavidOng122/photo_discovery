@@ -33,5 +33,34 @@ identify cross-photo patterns.
 normally return 3–7 meaningful tags.
 
 Never invent tags only to satisfy quantity.
+
+Return ONLY one JSON object.
+
+Never return tags as strings.
+
+Every item inside "tags" MUST be an object with exactly:
+- label
+- category
+- reason
+
+Example format:
+\`\`\`json
+{
+  "title": "異国文化が混ざる港町の日常",
+  "tags": [
+    {
+      "label": "異国文化が混ざる街",
+      "category": "Culture",
+      "reason": "複数の写真で英語表記や海外文化を感じる店舗表現が繰り返し確認できるため"
+    },
+    {
+      "label": "港と生活が近い街",
+      "category": "Local Life",
+      "reason": "港湾景観と住宅・商業空間が近接している様子が複数の写真から読み取れるため"
+    }
+  ]
+}
+\`\`\`
+The allowed categories must exactly match: ["Culture", "Architecture", "Nature", "History", "Local Life"]. Do not invent alternate category strings.
 `;
 }

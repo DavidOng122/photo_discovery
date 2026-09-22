@@ -59,7 +59,9 @@ export async function GET(
 
         const savedMap = new Map<string, string>();
         for (const row of savedRows ?? []) {
-          savedMap.set(row.source_recommended_place_id, row.id);
+          if (row.source_recommended_place_id) {
+            savedMap.set(row.source_recommended_place_id, row.id);
+          }
         }
 
         recommendations = {

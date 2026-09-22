@@ -12,5 +12,5 @@ export async function savePlace(recommendedPlaceId: string): Promise<SavePlaceRe
   });
 
   if (error) throw error;
-  return data as SavePlaceResult;
+  return data as unknown as SavePlaceResult;
 }
