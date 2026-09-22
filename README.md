@@ -6,7 +6,7 @@ Photo Discovery is an AI-powered web application that turns your photo walks int
 - Next.js 16.3 (App Router, Server Actions, Turbopack)
 - React 19
 - Supabase (PostgreSQL, Auth, Storage)
-- OpenAI (Vision + Text Models)
+- Qwen (Alibaba Cloud Model Studio, Vision + Text Models)
 - Tavily (Semantic Search)
 - Vanilla CSS
 
@@ -24,7 +24,7 @@ Photo Discovery is an AI-powered web application that turns your photo walks int
    ```
    Required keys:
    - `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   - `AI_PROVIDER`, `AI_VISION_MODEL`, `AI_TEXT_MODEL`, `AI_API_KEY`
+   - `AI_PROVIDER=qwen`, `AI_BASE_URL`, `AI_VISION_MODEL`, `AI_TEXT_MODEL`, `AI_API_KEY`
    - `SEARCH_PROVIDER=tavily`, `TAVILY_API_KEY`
 
 3. **Supabase Database**
@@ -50,7 +50,7 @@ npx tsx --env-file=.env.local scripts/seed-demo.ts <your_user_id>
 
 ## Architecture & Current Scope
 - **Anonymous Authentication:** Users are assigned an anonymous session on arrival. No sign-up required.
-- **Multimodal AI Analysis:** The app groups uploaded photos and sends them to OpenAI Vision as a single prompt to extract themes.
+- **Multimodal AI Analysis:** The app groups uploaded photos and sends them to Qwen (via an OpenAI-compatible API transport) as a single prompt to extract themes. (Note: installing the `openai` npm package does NOT mean the project is using OpenAI-hosted models).
 - **Semantic Search:** Selected themes are compiled into a Tavily search query, producing real destinations.
 - **Immutability:** A completed Walk's core tags and recommendations are locked to preserve the original discovery context. Saved places can be toggled independently.
 - **V1 Scope:** Current scope does not include ratings, travel time, Google Maps API keys (uses external search URLs instead), or social features. Focus is purely on discovery.

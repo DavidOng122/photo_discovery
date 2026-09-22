@@ -14,6 +14,7 @@ export function requireEnv(key: string): string {
 export function validateAIConfig() {
   const missing: string[] = [];
   if (!process.env.AI_PROVIDER) missing.push('AI_PROVIDER');
+  if (!process.env.AI_BASE_URL) missing.push('AI_BASE_URL');
   if (!process.env.AI_API_KEY) missing.push('AI_API_KEY');
   if (!process.env.AI_VISION_MODEL) missing.push('AI_VISION_MODEL');
   if (!process.env.AI_TEXT_MODEL) missing.push('AI_TEXT_MODEL');
