@@ -50,10 +50,31 @@ export async function POST(
     }
 
     // Load excluded place names from this user's history
-    const { data: previousPlaces } = await supabase
-      .from("recommended_places")
-      .select("name, recommendation_sets!inner(walk_id, walks!inner(user_id))")
-      .eq("recommendation_sets.walks.user_id", user.id);
+    const { data: userWalks } = await supabase
+      .from("walks")
+      .select("id")
+      .eq("user_id", user.id);
+    
+    let previousPlaceNames: string[] = [];
+    if (userWalks && userWalks.length > 0) {
+      const walkIds = userWalks.map((w: any) => w.id);
+      const { data: userSets } = await supabase
+        .from("recommendation_sets")
+        .select("id")
+        .in("walk_id", walkIds);
+        
+      if (userSets && userSets.length > 0) {
+        const setIds = userSets.map((s: any) => s.id);
+        const { data: previousPlaces } = await supabase
+          .from("recommended_places")
+          .select("name")
+          .in("recommendation_set_id", setIds);
+          
+        if (previousPlaces) {
+          previousPlaceNames = previousPlaces.map((p: any) => p.name);
+        }
+      }
+    }
 
     const { data: savedPlaces } = await supabase
       .from("saved_places")
@@ -61,7 +82,7 @@ export async function POST(
       .eq("user_id", user.id);
 
     const excludedNames: string[] = [
-      ...(previousPlaces?.map((p: any) => p.name) ?? []),
+      ...previousPlaceNames,
       ...(savedPlaces?.map((p: any) => p.name) ?? []),
     ];
 

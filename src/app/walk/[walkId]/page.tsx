@@ -36,7 +36,7 @@ export default async function WalkDetailPage({
       <WalkTitleEditor walkId={walk.id} initialTitle={walk.title} />
 
       {/* Location + date */}
-      <WalkHeader title="" location={walk.location} createdAt={walk.createdAt} />
+      <WalkHeader location={walk.location} createdAt={walk.createdAt} />
 
       {/* Photos */}
       <WalkPhotoGrid photos={walk.photos} />
