@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, ReactNode, useContext, useMemo, useState } from 'react';
+import { createContext, ReactNode, useCallback, useContext, useMemo, useState } from 'react';
 
 interface PhotoSelectionContextValue {
   pendingFiles: File[];
@@ -12,14 +12,15 @@ const PhotoSelectionContext = createContext<PhotoSelectionContextValue | null>(n
 
 export function PhotoSelectionProvider({ children }: { children: ReactNode }) {
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const clearPendingFiles = useCallback(() => setPendingFiles([]), []);
 
   const value = useMemo(
     () => ({
       pendingFiles,
       setPendingFiles,
-      clearPendingFiles: () => setPendingFiles([]),
+      clearPendingFiles,
     }),
-    [pendingFiles],
+    [clearPendingFiles, pendingFiles],
   );
 
   return (

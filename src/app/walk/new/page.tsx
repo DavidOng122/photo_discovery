@@ -17,11 +17,16 @@ export default function NewWalkPage() {
   const [showPicker, setShowPicker] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const knownPhotoIds = useRef<Set<string>>(new Set());
+  const consumedPendingFiles = useRef<File[] | null>(null);
 
   useEffect(() => {
-    if (pendingFiles.length === 0) return;
-    addFiles(pendingFiles);
+    if (pendingFiles.length === 0 || consumedPendingFiles.current === pendingFiles) return;
+
+    // React Strict Mode replays effects in development. Mark this exact batch as
+    // consumed before updating state so it can only be appended once.
+    consumedPendingFiles.current = pendingFiles;
     clearPendingFiles();
+    addFiles(pendingFiles);
   }, [addFiles, clearPendingFiles, pendingFiles]);
 
   useEffect(() => {
