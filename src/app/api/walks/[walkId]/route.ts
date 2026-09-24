@@ -1,6 +1,39 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentUser } from '@/lib/auth/getCurrentUser';
+import { getSignedImageUrl } from '@/lib/images/getSignedImageUrl';
+
+interface WalkTag {
+  id: string;
+  label: string;
+  category: string;
+  reason: string;
+  selected: boolean;
+}
+
+interface RecommendedPlaceWithTags {
+  id: string;
+  name: string;
+  area: string | null;
+  description: string;
+  image_url: string | null;
+  google_maps_query: string;
+  recommended_place_tags: Array<{
+    discovery_tags: { label: string } | null;
+  }>;
+}
+
+interface RecommendationPlace {
+  id: string;
+  name: string;
+  area: string | null;
+  description: string;
+  imageUrl: string | null;
+  googleMapsQuery: string;
+  matchedTags: string[];
+  isSaved: boolean;
+  savedPlaceId: string | null;
+}
 
 export async function GET(
   request: Request,
@@ -25,7 +58,23 @@ export async function GET(
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
-  let tags: any[] = [];
+  const { data: walkPhotos } = await supabase
+    .from('walk_photos')
+    .select('storage_path, sort_order')
+    .eq('walk_id', walkId)
+    .order('sort_order', { ascending: true })
+    .limit(3);
+
+  const photos = (
+    await Promise.all(
+      (walkPhotos ?? []).map(async (photo) => ({
+        url: await getSignedImageUrl(photo.storage_path, 3600),
+        sortOrder: photo.sort_order,
+      })),
+    )
+  ).filter((photo): photo is { url: string; sortOrder: number } => Boolean(photo.url));
+
+  let tags: WalkTag[] = [];
   if (['TAG_SELECTION', 'RECOMMENDING', 'COMPLETED'].includes(walk.status)) {
     const { data } = await supabase
       .from('discovery_tags')
@@ -34,7 +83,7 @@ export async function GET(
     tags = data || [];
   }
 
-  let recommendations: { places: any[] } | null = null;
+  let recommendations: { places: RecommendationPlace[] } | null = null;
   if (walk.status === 'COMPLETED') {
     const { data: set } = await supabase
       .from('recommendation_sets')
@@ -49,7 +98,8 @@ export async function GET(
         .eq('recommendation_set_id', set.id);
 
       if (places) {
-        const placeIds = places.map((p: any) => p.id);
+        const typedPlaces = places as unknown as RecommendedPlaceWithTags[];
+        const placeIds = typedPlaces.map((place) => place.id);
 
         const { data: savedRows } = await supabase
           .from('saved_places')
@@ -65,23 +115,23 @@ export async function GET(
         }
 
         recommendations = {
-          places: places.map((p: any) => ({
-            id: p.id,
-            name: p.name,
-            area: p.area,
-            description: p.description,
-            imageUrl: p.image_url,
-            googleMapsQuery: p.google_maps_query,
-            matchedTags: (p.recommended_place_tags ?? [])
-              .map((rpt: any) => rpt.discovery_tags?.label)
-              .filter(Boolean),
-            isSaved: savedMap.has(p.id),
-            savedPlaceId: savedMap.get(p.id) ?? null,
+          places: typedPlaces.map((place) => ({
+            id: place.id,
+            name: place.name,
+            area: place.area,
+            description: place.description,
+            imageUrl: place.image_url,
+            googleMapsQuery: place.google_maps_query,
+            matchedTags: (place.recommended_place_tags ?? [])
+              .map((relation) => relation.discovery_tags?.label)
+              .filter((label): label is string => Boolean(label)),
+            isSaved: savedMap.has(place.id),
+            savedPlaceId: savedMap.get(place.id) ?? null,
           })),
         };
       }
     }
   }
 
-  return NextResponse.json({ walk, tags, recommendations });
+  return NextResponse.json({ walk, photos, tags, recommendations });
 }
