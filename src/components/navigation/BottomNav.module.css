@@ -56,8 +56,12 @@
   display: block;
   width: 62px;
   height: 62px;
+  padding: 0;
   transform: translateX(-50%);
+  border: 0;
   border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
 }
 
 .cameraAction img {

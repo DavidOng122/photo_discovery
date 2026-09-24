@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { PageContainer } from '@/components/common/PageContainer';
 import { usePhotoUpload } from '@/hooks/usePhotoUpload';
 import { PhotoPreviewGrid } from '@/components/upload/PhotoPreviewGrid';
@@ -9,6 +9,7 @@ import { UploadSubmitButton } from '@/components/upload/UploadSubmitButton';
 import { PhotoPickerSheet } from '@/components/upload/PhotoPickerSheet';
 import { AddPhotoButton } from '@/components/upload/AddPhotoButton';
 import { MAX_PHOTOS } from '@/constants/images';
+import { usePendingPhotoSelection } from '@/components/upload/PhotoSelectionContext';
 
 export default function NewWalkPage() {
   const {
@@ -23,7 +24,14 @@ export default function NewWalkPage() {
   } = usePhotoUpload();
 
   const [showPicker, setShowPicker] = useState(false);
+  const { pendingFiles, clearPendingFiles } = usePendingPhotoSelection();
   const canAddMore = photos.length < MAX_PHOTOS;
+
+  useEffect(() => {
+    if (pendingFiles.length === 0) return;
+    addFiles(pendingFiles);
+    clearPendingFiles();
+  }, [addFiles, clearPendingFiles, pendingFiles]);
 
   const handleFilesSelected = (files: FileList | null) => {
     addFiles(files);

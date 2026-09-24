@@ -1,0 +1,137 @@
+.overlay {
+  position: fixed;
+  z-index: 100;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 100%;
+  max-width: 402px;
+  transform: translateX(-50%);
+  background: rgb(0 0 0 / 42%);
+}
+
+.sheet {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  overflow: hidden;
+  padding-bottom: calc(32px + env(safe-area-inset-bottom));
+  border-radius: 24px 24px 0 0;
+  background: #fff;
+  color: #1c1917;
+  font-family: "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+}
+
+.handleArea {
+  display: flex;
+  justify-content: center;
+  padding: 12px 0 4px;
+}
+
+.handle {
+  width: 40px;
+  height: 4px;
+  border-radius: 999px;
+  background: #e7e5e4;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  padding: 12px 16px 8px;
+}
+
+.fileInput {
+  display: none;
+}
+
+.actionRow {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 12px;
+  border: 0;
+  border-radius: 16px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.actionRow:active {
+  background: #fafaf9;
+}
+
+.secondActionRow {
+  margin-top: 4px;
+}
+
+.actionRow:focus-visible,
+.cancelButton:focus-visible {
+  outline: 2px solid #57534d;
+  outline-offset: -2px;
+}
+
+.iconBox {
+  display: flex;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: #f5f5f4;
+}
+
+.iconBox img {
+  display: block;
+}
+
+.actionCopy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+.actionTitle {
+  color: #1c1917;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  white-space: nowrap;
+}
+
+.actionDescription {
+  padding-top: 2px;
+  color: #a6a09b;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.divider {
+  height: 1px;
+  margin: 4px 4px 0;
+  background: #f5f5f4;
+}
+
+.cancelButton {
+  width: calc(100% - 32px);
+  height: 48px;
+  margin: 8px 16px 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #79716b;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  text-align: center;
+}
