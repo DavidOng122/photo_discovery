@@ -9,14 +9,21 @@ interface AnalysisLoadingScreenProps {
 }
 
 function buildCardPhotos(photoUrls: string[]) {
-  if (photoUrls.length === 0) return [null, null, null];
-
   const firstThree = photoUrls.slice(0, 3);
-  return [firstThree[1] ?? firstThree[0], firstThree[2] ?? firstThree[0], firstThree[0]];
+  const isLoadingPhotos = firstThree.length === 0;
+
+  return {
+    center: firstThree[0] ?? null,
+    left: firstThree[1] ?? null,
+    right: firstThree[2] ?? null,
+    showCenter: isLoadingPhotos || firstThree.length >= 1,
+    showLeft: isLoadingPhotos || firstThree.length >= 2,
+    showRight: isLoadingPhotos || firstThree.length >= 3,
+  };
 }
 
 export function AnalysisLoadingScreen({ photoUrls }: AnalysisLoadingScreenProps) {
-  const [leftPhoto, rightPhoto, centerPhoto] = buildCardPhotos(photoUrls);
+  const cards = buildCardPhotos(photoUrls);
 
   return (
     <section className={styles.screen} data-node-id="13:76" aria-live="polite" aria-busy="true">
@@ -33,17 +40,23 @@ export function AnalysisLoadingScreen({ photoUrls }: AnalysisLoadingScreenProps)
         </div>
 
         <div className={styles.photoDeck} data-node-id="13:88" aria-hidden="true">
-          <div className={styles.leftMotion} data-node-id="13:89">
-            <PhotoCard photoUrl={leftPhoto} side="side" nodeId="13:90" imageNodeId="13:91" />
-          </div>
+          {cards.showLeft && (
+            <div className={styles.leftMotion} data-node-id="13:89">
+              <PhotoCard photoUrl={cards.left} side="side" nodeId="13:90" imageNodeId="13:91" />
+            </div>
+          )}
 
-          <div className={styles.rightMotion} data-node-id="13:92">
-            <PhotoCard photoUrl={rightPhoto} side="side" nodeId="13:93" imageNodeId="13:94" />
-          </div>
+          {cards.showRight && (
+            <div className={styles.rightMotion} data-node-id="13:92">
+              <PhotoCard photoUrl={cards.right} side="side" nodeId="13:93" imageNodeId="13:94" />
+            </div>
+          )}
 
-          <div className={styles.centerMotion} data-node-id="13:95">
-            <PhotoCard photoUrl={centerPhoto} side="center" nodeId="13:96" imageNodeId="13:97" />
-          </div>
+          {cards.showCenter && (
+            <div className={styles.centerMotion} data-node-id="13:95">
+              <PhotoCard photoUrl={cards.center} side="center" nodeId="13:96" imageNodeId="13:97" />
+            </div>
+          )}
         </div>
 
         <p className={styles.waitingText} data-node-id="13:99">少しお待ちください</p>
