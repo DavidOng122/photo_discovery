@@ -1,48 +1,26 @@
-import React from 'react';
+/* eslint-disable @next/next/no-img-element */
+import { PreviewFile } from '@/hooks/usePhotoUpload';
+import styles from './PhotoPreviewGrid.module.css';
 
 interface Props {
-  url: string;
-  onRemove: () => void;
+  photo: PreviewFile;
+  selected: boolean;
+  onToggle: () => void;
+  disabled?: boolean;
 }
 
-export function PhotoPreviewItem({ url, onRemove }: Props) {
+export function PhotoPreviewItem({ photo, selected, onToggle, disabled = false }: Props) {
   return (
-    <div style={{ position: 'relative', width: '100%', paddingBottom: '100%' }}>
-      <img
-        src={url}
-        alt="Preview"
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-          borderRadius: '8px',
-        }}
-      />
-      <button
-        type="button"
-        onClick={onRemove}
-        style={{
-          position: 'absolute',
-          top: '4px',
-          right: '4px',
-          background: 'rgba(0, 0, 0, 0.5)',
-          color: 'white',
-          border: 'none',
-          borderRadius: '50%',
-          width: '24px',
-          height: '24px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: 'pointer',
-          fontSize: '12px',
-        }}
-      >
-        ✕
-      </button>
-    </div>
+    <button
+      type="button"
+      className={styles.photoTile}
+      onClick={onToggle}
+      disabled={disabled}
+      aria-label={selected ? '写真の選択を解除' : '写真を選択'}
+      aria-pressed={selected}
+    >
+      <img className={styles.thumbnail} src={photo.previewUrl} alt="" />
+      {selected && <span className={styles.selectedOverlay} aria-hidden="true" />}
+    </button>
   );
 }

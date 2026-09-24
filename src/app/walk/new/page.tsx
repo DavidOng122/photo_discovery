@@ -1,31 +1,22 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { PageContainer } from '@/components/common/PageContainer';
-import { usePhotoUpload } from '@/hooks/usePhotoUpload';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { PhotoActionSheet } from '@/components/upload/PhotoActionSheet';
 import { PhotoPreviewGrid } from '@/components/upload/PhotoPreviewGrid';
-import { LocationInput } from '@/components/upload/LocationInput';
-import { UploadSubmitButton } from '@/components/upload/UploadSubmitButton';
-import { PhotoPickerSheet } from '@/components/upload/PhotoPickerSheet';
-import { AddPhotoButton } from '@/components/upload/AddPhotoButton';
-import { MAX_PHOTOS } from '@/constants/images';
 import { usePendingPhotoSelection } from '@/components/upload/PhotoSelectionContext';
+import { MAX_PHOTOS } from '@/constants/images';
+import { usePhotoUpload } from '@/hooks/usePhotoUpload';
+import styles from './page.module.css';
 
 export default function NewWalkPage() {
-  const {
-    photos,
-    location,
-    setLocation,
-    isUploading,
-    error,
-    addFiles,
-    removePhoto,
-    uploadAndSubmit
-  } = usePhotoUpload();
-
-  const [showPicker, setShowPicker] = useState(false);
+  const router = useRouter();
+  const { photos, isUploading, error, addFiles, uploadAndSubmit } = usePhotoUpload();
   const { pendingFiles, clearPendingFiles } = usePendingPhotoSelection();
-  const canAddMore = photos.length < MAX_PHOTOS;
+  const [showPicker, setShowPicker] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const knownPhotoIds = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     if (pendingFiles.length === 0) return;
@@ -33,61 +24,64 @@ export default function NewWalkPage() {
     clearPendingFiles();
   }, [addFiles, clearPendingFiles, pendingFiles]);
 
+  useEffect(() => {
+    const currentIds = new Set(photos.map((photo) => photo.id));
+    const newIds = photos.filter((photo) => !knownPhotoIds.current.has(photo.id)).map((photo) => photo.id);
+
+    setSelectedIds((previous) => {
+      const next = new Set([...previous].filter((id) => currentIds.has(id)));
+      newIds.forEach((id) => next.add(id));
+      return next;
+    });
+    knownPhotoIds.current = currentIds;
+  }, [photos]);
+
+  const togglePhoto = useCallback((id: string) => {
+    setSelectedIds((previous) => {
+      const next = new Set(previous);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
   const handleFilesSelected = (files: FileList | null) => {
     addFiles(files);
     setShowPicker(false);
   };
 
+  const selectedCount = selectedIds.size;
+
   return (
-    <PageContainer>
-      <h1 style={{ fontSize: '1.5rem', margin: 0 }}>新しい発見</h1>
-      
-      {error && (
-        <div style={{ 
-          padding: '1rem', 
-          backgroundColor: '#fee2e2', 
-          color: '#b91c1c', 
-          borderRadius: '8px',
-          marginTop: '1rem',
-          fontSize: '0.875rem'
-        }}>
-          {error}
-        </div>
-      )}
+    <div className={styles.page}>
+      <header className={styles.header} data-node-id="64:31">
+        <button type="button" className={styles.closeButton} onClick={() => router.push('/')} disabled={isUploading} aria-label="閉じる">
+          <Image src="/figma/photo-upload/close.svg" alt="" width={18} height={18} unoptimized />
+        </button>
+        <h1 className={styles.title}>写真を追加</h1>
+        <button
+          type="button"
+          className={styles.nextButton}
+          onClick={() => uploadAndSubmit(selectedIds)}
+          disabled={isUploading || selectedCount === 0}
+          aria-busy={isUploading}
+        >
+          次へ ({selectedCount})
+        </button>
+      </header>
 
-      <PhotoPreviewGrid photos={photos} onRemove={removePhoto} />
+      {error && <p className={styles.error}>{error}</p>}
 
-      {canAddMore && !showPicker && (
-        <AddPhotoButton 
-          onClick={() => setShowPicker(true)} 
-          disabled={isUploading} 
-        />
-      )}
-
-      {canAddMore && showPicker && (
-        <PhotoPickerSheet 
-          onFilesSelected={handleFilesSelected} 
-          disabled={isUploading} 
-        />
-      )}
-
-      {photos.length >= MAX_PHOTOS && (
-        <p style={{ color: 'var(--muted)', fontSize: '0.875rem', marginTop: '1rem', textAlign: 'center' }}>
-          最大10枚まで追加できます。
-        </p>
-      )}
-
-      <LocationInput 
-        value={location} 
-        onChange={setLocation} 
-        disabled={isUploading} 
+      <PhotoPreviewGrid
+        photos={photos}
+        selectedIds={selectedIds}
+        onToggle={togglePhoto}
+        onAdd={() => setShowPicker(true)}
+        canAddMore={photos.length < MAX_PHOTOS}
+        disabled={isUploading}
       />
 
-      <UploadSubmitButton 
-        onClick={uploadAndSubmit} 
-        isUploading={isUploading} 
-        disabled={photos.length === 0}
-      />
-    </PageContainer>
+      {showPicker && <PhotoActionSheet onClose={() => setShowPicker(false)} onFilesSelected={handleFilesSelected} />}
+    </div>
   );
 }
