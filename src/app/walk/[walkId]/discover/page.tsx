@@ -3,11 +3,9 @@
 import React, { useCallback, useEffect, useRef, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageContainer } from '@/components/common/PageContainer';
-import { DiscoveryHeader } from '@/components/discovery/DiscoveryHeader';
-import { DiscoveryTagSelector } from '@/components/discovery/DiscoveryTagSelector';
-import { ConfirmDiscoveryButton } from '@/components/discovery/ConfirmDiscoveryButton';
 import { MIN_SELECTED_TAGS, MAX_SELECTED_TAGS } from '@/constants/discovery';
 import { AnalysisLoadingScreen } from '@/components/discovery/AnalysisLoadingScreen';
+import { ThemeSelectionScreen } from '@/components/discovery/ThemeSelectionScreen';
 
 interface TagData {
   id: string;
@@ -144,28 +142,15 @@ export default function DiscoverPage({ params }: { params: Promise<{ walkId: str
       )}
 
       {status === 'TAG_SELECTION' && result && (
-        <PageContainer>
-          <DiscoveryHeader title={result.title} />
-          
-          {confirmError && (
-            <div style={{ padding: '1rem', backgroundColor: '#fee2e2', color: '#b91c1c', borderRadius: '8px', marginBottom: '1rem', fontSize: '0.875rem' }}>
-              {confirmError}
-            </div>
-          )}
-
-          <DiscoveryTagSelector 
-            tags={result.tags} 
-            selectedIds={selectedIds} 
-            onToggle={handleToggleTag}
-            disabled={isConfirming}
-          />
-
-          <ConfirmDiscoveryButton
-            onClick={handleConfirm}
-            isConfirming={isConfirming}
-            disabled={selectedIds.size < MIN_SELECTED_TAGS}
-          />
-        </PageContainer>
+        <ThemeSelectionScreen
+          tags={result.tags}
+          selectedIds={selectedIds}
+          onToggle={handleToggleTag}
+          onBack={() => router.back()}
+          onNext={handleConfirm}
+          isSubmitting={isConfirming}
+          error={confirmError}
+        />
       )}
     </>
   );
