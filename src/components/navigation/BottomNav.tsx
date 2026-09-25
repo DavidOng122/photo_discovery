@@ -9,7 +9,7 @@ import { usePendingPhotoSelection } from '../upload/PhotoSelectionContext';
 import styles from './BottomNav.module.css';
 
 export function isBottomNavHidden(pathname: string) {
-  return pathname === '/walk/new' || /^\/walk\/[^/]+\/discover(?:\/|$)/.test(pathname);
+  return pathname === '/walk/new' || /^\/walk\/[^/]+\/(?:discover|recommendations)(?:\/|$)/.test(pathname);
 }
 
 export function BottomNav() {

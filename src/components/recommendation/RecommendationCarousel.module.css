@@ -1,0 +1,16 @@
+.carousel {
+  display: flex;
+  width: 100%;
+  gap: 13px;
+  padding: 0 19px 100px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-padding-inline: 19px;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.carousel::-webkit-scrollbar {
+  display: none;
+}

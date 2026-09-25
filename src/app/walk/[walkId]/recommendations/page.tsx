@@ -1,11 +1,15 @@
 'use client';
 
 import React, { useEffect, useRef, useState, use } from 'react';
-import { PageContainer } from '@/components/common/PageContainer';
 import { RecommendationCarousel } from '@/components/recommendation/RecommendationCarousel';
 import type { RecommendationCardData } from '@/components/recommendation/RecommendationCard';
+import styles from './page.module.css';
 
 type PageStatus = 'LOADING' | 'GENERATING' | 'COMPLETED' | 'ERROR';
+
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
 
 export default function RecommendationsPage({ params }: { params: Promise<{ walkId: string }> }) {
   const { walkId } = use(params);
@@ -35,8 +39,8 @@ export default function RecommendationsPage({ params }: { params: Promise<{ walk
       if (!res.ok) throw new Error(data.error?.message || 'おすすめ場所を見つけられませんでした。');
       setPlaces(data.places);
       setPageStatus('COMPLETED');
-    } catch (err: any) {
-      setErrorMessage(err.message);
+    } catch (err: unknown) {
+      setErrorMessage(getErrorMessage(err, 'おすすめ場所を見つけられませんでした。'));
       setPageStatus('ERROR');
     }
   };
@@ -65,8 +69,8 @@ export default function RecommendationsPage({ params }: { params: Promise<{ walk
           setErrorMessage('予期しない状態です。最初からやり直してください。');
           setPageStatus('ERROR');
         }
-      } catch (err: any) {
-        setErrorMessage(err.message || 'エラーが発生しました。');
+      } catch (err: unknown) {
+        setErrorMessage(getErrorMessage(err, 'エラーが発生しました。'));
         setPageStatus('ERROR');
       }
     };
@@ -81,44 +85,34 @@ export default function RecommendationsPage({ params }: { params: Promise<{ walk
   };
 
   return (
-    <PageContainer>
+    <section className={styles.screen} data-node-id="13:102">
       {pageStatus === 'LOADING' && (
-        <div style={{ textAlign: 'center', marginTop: '4rem' }}>
-          <p style={{ color: 'var(--muted)' }}>読み込み中…</p>
+        <div className={styles.status}>
+          <p>読み込み中…</p>
         </div>
       )}
 
       {pageStatus === 'GENERATING' && (
-        <div style={{ textAlign: 'center', marginTop: '4rem' }}>
-          <h2 style={{ fontSize: '1.25rem', margin: '0 0 1rem' }}>
+        <div className={styles.status}>
+          <h2>
             次の発見につながる場所を探しています…
           </h2>
-          <p style={{ color: 'var(--muted)', fontSize: '0.875rem' }}>
+          <p>
             東京の街を分析しています。少しお待ちください。
           </p>
         </div>
       )}
 
       {pageStatus === 'ERROR' && (
-        <div style={{ textAlign: 'center', marginTop: '4rem' }}>
-          <h2 style={{ fontSize: '1.1rem', color: '#f87171', margin: '0 0 0.75rem' }}>
+        <div className={`${styles.status} ${styles.errorState}`}>
+          <h2>
             おすすめ場所を見つけられませんでした。
           </h2>
-          <p style={{ color: 'var(--muted)', fontSize: '0.875rem', marginBottom: '2rem' }}>
+          <p>
             {errorMessage || 'もう一度お試しください。'}
           </p>
           <button
             onClick={handleRetry}
-            style={{
-              padding: '0.75rem 1.5rem',
-              backgroundColor: 'var(--primary)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '9999px',
-              fontWeight: 'bold',
-              fontSize: '0.95rem',
-              cursor: 'pointer',
-            }}
           >
             もう一度探す
           </button>
@@ -126,19 +120,11 @@ export default function RecommendationsPage({ params }: { params: Promise<{ walk
       )}
 
       {pageStatus === 'COMPLETED' && places.length > 0 && (
-        <div>
-          <div style={{ marginBottom: '1.75rem' }}>
-            <h1 style={{ fontSize: '1.4rem', margin: '0 0 0.35rem', fontWeight: 700 }}>
-              次の発見へ
-            </h1>
-            <p style={{ color: 'var(--muted)', fontSize: '0.875rem', margin: 0 }}>
-              あなたの発見からつながる東京の場所
-            </p>
-          </div>
-
+        <div className={styles.results}>
+          <h1 data-node-id="16:14">新しい発見</h1>
           <RecommendationCarousel places={places} />
         </div>
       )}
-    </PageContainer>
+    </section>
   );
 }
