@@ -1,8 +1,6 @@
 'use client';
 
 import { ReactNode } from 'react';
-import { usePathname } from 'next/navigation';
-import { BottomNav, isBottomNavHidden } from '../navigation/BottomNav';
 import { PhotoSelectionProvider } from '../upload/PhotoSelectionContext';
 
 interface AppShellProps {
@@ -10,9 +8,6 @@ interface AppShellProps {
 }
 
 export function AppShell({ children }: AppShellProps) {
-  const pathname = usePathname();
-  const hideBottomNav = isBottomNavHidden(pathname);
-
   return (
     <PhotoSelectionProvider>
       <div
@@ -27,13 +22,11 @@ export function AppShell({ children }: AppShellProps) {
       >
         <main
           style={{
-            paddingBottom: hideBottomNav ? 0 : 'calc(84px + env(safe-area-inset-bottom))',
             minHeight: '100vh',
           }}
         >
           {children}
         </main>
-        <BottomNav />
       </div>
     </PhotoSelectionProvider>
   );

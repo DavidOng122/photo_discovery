@@ -1,6 +1,5 @@
-import { DiscoveryHome } from '@/components/home/DiscoveryHome';
-import { mockDiscoveries } from '@/data/mockDiscoveries';
+import { MinimalHome } from '@/components/home/MinimalHome';
 
 export default function HomePage() {
-  return <DiscoveryHome discoveries={mockDiscoveries} />;
+  return <MinimalHome />;
 }
