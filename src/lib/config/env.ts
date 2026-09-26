@@ -13,7 +13,11 @@ export function requireEnv(key: string): string {
 
 export function validateAIConfig() {
   const missing: string[] = [];
-  if (!process.env.AI_PROVIDER) missing.push('AI_PROVIDER');
+  const visionProvider = process.env.VISION_PROVIDER ?? process.env.AI_PROVIDER;
+  const recommendationProvider = process.env.RECOMMENDATION_PROVIDER ?? process.env.AI_PROVIDER;
+
+  if (!visionProvider) missing.push('VISION_PROVIDER or AI_PROVIDER');
+  if (!recommendationProvider) missing.push('RECOMMENDATION_PROVIDER or AI_PROVIDER');
   if (!process.env.AI_BASE_URL) missing.push('AI_BASE_URL');
   if (!process.env.AI_API_KEY) missing.push('AI_API_KEY');
   if (!process.env.AI_VISION_MODEL) missing.push('AI_VISION_MODEL');
@@ -24,12 +28,8 @@ export function validateAIConfig() {
 }
 
 export function validateSearchConfig() {
-  const missing: string[] = [];
-  if (!process.env.SEARCH_PROVIDER) missing.push('SEARCH_PROVIDER');
-  if (!process.env.TAVILY_API_KEY) missing.push('TAVILY_API_KEY');
-  if (missing.length > 0) {
-    throw new Error(`Missing search configuration: ${missing.join(', ')}`);
-  }
+  // Search is intentionally not required in the Photo → Feature → Place flow.
+  return true;
 }
 
 export function validateSupabaseConfig() {

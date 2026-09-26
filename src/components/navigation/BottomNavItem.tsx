@@ -1,28 +1,38 @@
+import Image from 'next/image';
 import Link from 'next/link';
+import styles from './BottomNav.module.css';
 
 interface BottomNavItemProps {
   href: string;
   label: string;
+  iconSrc: string;
+  iconWidth: number;
+  iconHeight: number;
   isActive: boolean;
 }
 
-export function BottomNavItem({ href, label, isActive }: BottomNavItemProps) {
+export function BottomNavItem({
+  href,
+  label,
+  iconSrc,
+  iconWidth,
+  iconHeight,
+  isActive,
+}: BottomNavItemProps) {
   return (
-    <Link 
+    <Link
       href={href}
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '0.5rem',
-        flex: 1,
-        color: isActive ? 'var(--primary)' : 'var(--muted)',
-        fontWeight: isActive ? 'bold' : 'normal',
-        transition: 'color 0.2s',
-      }}
+      className={styles.item}
+      aria-current={isActive ? 'page' : undefined}
     >
-      <span style={{ fontSize: '0.875rem' }}>{label}</span>
+      <Image
+        src={iconSrc}
+        alt=""
+        width={iconWidth}
+        height={iconHeight}
+        unoptimized
+      />
+      <span>{label}</span>
     </Link>
   );
 }

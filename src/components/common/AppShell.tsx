@@ -1,5 +1,7 @@
+'use client';
+
 import { ReactNode } from 'react';
-import { BottomNav } from '../navigation/BottomNav';
+import { PhotoSelectionProvider } from '../upload/PhotoSelectionContext';
 
 interface AppShellProps {
   children: ReactNode;
@@ -7,25 +9,25 @@ interface AppShellProps {
 
 export function AppShell({ children }: AppShellProps) {
   return (
-    <div
-      style={{
-        margin: '0 auto',
-        maxWidth: '600px',
-        minHeight: '100vh',
-        position: 'relative',
-        backgroundColor: 'var(--background)',
-        boxShadow: '0 0 10px rgba(0,0,0,0.05)',
-      }}
-    >
-      <main
+    <PhotoSelectionProvider>
+      <div
         style={{
-          paddingBottom: 'calc(60px + env(safe-area-inset-bottom))', 
+          margin: '0 auto',
+          maxWidth: '402px',
           minHeight: '100vh',
+          position: 'relative',
+          backgroundColor: 'var(--background)',
+          boxShadow: '0 0 10px rgba(0,0,0,0.05)',
         }}
       >
-        {children}
-      </main>
-      <BottomNav />
-    </div>
+        <main
+          style={{
+            minHeight: '100vh',
+          }}
+        >
+          {children}
+        </main>
+      </div>
+    </PhotoSelectionProvider>
   );
 }

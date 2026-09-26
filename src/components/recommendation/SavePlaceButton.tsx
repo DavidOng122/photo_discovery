@@ -1,11 +1,17 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
+import styles from './SavePlaceButton.module.css';
 
 interface Props {
   placeId: string;          // recommended_places.id
   initialSaved: boolean;
   initialSavedPlaceId?: string | null;
+}
+
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
 }
 
 export function SavePlaceButton({ placeId, initialSaved, initialSavedPlaceId }: Props) {
@@ -25,9 +31,9 @@ export function SavePlaceButton({ placeId, initialSaved, initialSavedPlaceId }: 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error?.message || '場所を保存できませんでした。');
       setSavedPlaceId(data.savedPlaceId);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setSaved(false); // Restore on failure
-      setError(err.message);
+      setError(getErrorMessage(err, '場所を保存できませんでした。'));
     } finally {
       setLoading(false);
     }
@@ -48,41 +54,30 @@ export function SavePlaceButton({ placeId, initialSaved, initialSavedPlaceId }: 
         const data = await res.json();
         throw new Error(data.error?.message || '保存を解除できませんでした。');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Restore on failure
       setSaved(true);
       setSavedPlaceId(prevId);
-      setError(err.message);
+      setError(getErrorMessage(err, '保存を解除できませんでした。'));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ flex: 1 }}>
+    <div className={styles.wrapper}>
       <button
+        type="button"
         onClick={saved ? handleUnsave : handleSave}
         disabled={loading}
-        style={{
-          width: '100%',
-          padding: '0.65rem 1rem',
-          borderRadius: '9999px',
-          border: saved ? '1px solid rgba(99,102,241,0.5)' : '1px solid rgba(255,255,255,0.15)',
-          backgroundColor: saved ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.05)',
-          color: saved ? '#a5b4fc' : '#c8c7e8',
-          fontSize: '0.85rem',
-          fontWeight: 600,
-          cursor: loading ? 'wait' : 'pointer',
-          opacity: loading ? 0.7 : 1,
-        }}
+        className={`${styles.button} ${saved ? styles.saved : ''}`}
+        aria-label={saved ? '保存を解除' : '場所を保存'}
+        aria-pressed={saved}
+        data-node-id="18:18"
       >
-        {saved ? '✓ 保存済み' : '＋ 保存'}
+        <Image src="/figma/recommendations/bookmark.svg" alt="" width={35} height={35} unoptimized />
       </button>
-      {error && (
-        <p style={{ fontSize: '0.75rem', color: '#f87171', marginTop: '0.3rem', textAlign: 'center' }}>
-          {error}
-        </p>
-      )}
+      {error && <span className={styles.error} role="status">{error}</span>}
     </div>
   );
 }

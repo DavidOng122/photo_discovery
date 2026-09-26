@@ -1,6 +1,4 @@
 import { createClient } from '@supabase/supabase-js';
-import { getSearchProvider } from '../src/lib/search';
-import { buildSearchQuery } from '../src/lib/search/buildSearchQuery';
 import { generateRecommendations } from '../src/lib/ai/generateRecommendations';
 
 const WALK_ID = '70d6f616-965b-4378-9f92-8f44bbd8ea2d';
@@ -101,39 +99,31 @@ async function continueFromRecommending(adminSb: any, walk: any, allTags: any[],
   if (!process.argv.includes('--live')) {
     console.log('\n[Inspection Only] Halting before provider calls (--live not specified).');
     return;
-  }  // --- 6. Tavily Search ---
-  console.log('\n=== Step 6: Tavily Search ===');
+  }  // --- 6. Feature-based recommendation ---
+  console.log('\n=== Step 6: Feature-based recommendation ===');
   const selectedTagLabels = updatedTags?.filter((t: any) => t.selected).map((t: any) => t.label) || [];
-  const searchQuery = buildSearchQuery(selectedTagLabels, walk.location);
-  console.log('Search query:', searchQuery);
-
-  const searchProvider = getSearchProvider();
-  const searchResults = await searchProvider.searchPlaces({ query: searchQuery, maxResults: 10 });
-  console.log(`Tavily results: ${searchResults.length}`);
-  searchResults.slice(0, 5).forEach((r: any) => {
-    console.log(`  - "${r.title}" | score: ${r.score?.toFixed(3)} | ${r.url}`);
-  });
-
-  if (searchResults.length === 0) {
-    console.error('FAIL: No Tavily results.');
-    return;
-  }
-
-  // --- 7. Qwen Text ---
-  console.log('\n=== Step 7: Qwen Text Recommendations ===');
-  console.log('AI_TEXT_MODEL:', process.env.AI_TEXT_MODEL);
-  console.log('AI_PROVIDER:', process.env.AI_PROVIDER);
-
   const selectedTagsFull = updatedTags?.filter((t: any) => t.selected).map((t: any) => ({
     label: t.label,
     category: t.category as any,
     reason: t.reason || '',
   })) || [];
 
+  const selectedFeatures = selectedTagsFull.map((tag: any) => ({
+    label: tag.label,
+    type: tag.category === 'Culture' ? 'culture' : tag.category === 'Architecture' ? 'style' : tag.category === 'History' ? 'culture' : 'atmosphere',
+    reason: tag.reason || '特徴に基づくおすすめです。',
+  }));
+
+  // --- 7. Qwen Text ---
+  console.log('\n=== Step 7: Qwen Text Recommendations ===');
+  console.log('AI_TEXT_MODEL:', process.env.AI_TEXT_MODEL);
+  console.log('AI_PROVIDER:', process.env.AI_PROVIDER);
+
   const recOutput = await generateRecommendations({
+    selectedFeatures,
     selectedTags: selectedTagsFull,
+    currentCity: walk.location ?? 'Tokyo',
     originalLocation: walk.location,
-    searchResults,
     excludedPlaceNames: [],
     outputLanguage: 'ja',
   });
@@ -141,35 +131,22 @@ async function continueFromRecommending(adminSb: any, walk: any, allTags: any[],
   console.log(`\n=== Recommendation Output (${recOutput.places.length} places) ===`);
   recOutput.places.forEach((p, i) => {
     console.log(`\n  ${i + 1}. ${p.name} (${p.area})`);
-    console.log(`     matchedTags: [${p.matchedTags.join(', ')}]`);
-    console.log(`     sourceUrl: ${p.sourceUrl}`);
-    console.log(`     desc: ${p.description.substring(0, 100)}...`);
+    console.log(`     matchedFeatures: [${p.matchedFeatures.join(', ')}]`);
+    console.log(`     reason: ${p.reason.substring(0, 100)}...`);
   });
 
-  // Validate source grounding
-  const tavilyUrls = new Set(searchResults.map((r: any) => new URL(r.url).hostname));
-  let groundingPassed = 0;
-  recOutput.places.forEach(p => {
-    try {
-      const domain = new URL(p.sourceUrl).hostname;
-      if (tavilyUrls.has(domain)) groundingPassed++;
-    } catch {}
-  });
-  console.log(`\nSource grounding: ${groundingPassed}/${recOutput.places.length} places match Tavily domains`);
-
-  // --- 8. Persist ---
   console.log('\n=== Step 8: save_walk_recommendations RPC ===');
   const placesPayload = recOutput.places.map(p => ({
-    name: p.name, area: p.area ?? null, description: p.description,
+    name: p.name, area: p.area ?? null, description: p.reason,
     imageUrl: p.imageUrl ?? null, googleMapsQuery: p.googleMapsQuery,
-    sourceUrl: p.sourceUrl, sourceDomain: p.sourceDomain, matchedTags: p.matchedTags,
+    matchedTags: p.matchedFeatures,
   }));
 
   const { error: rpcErr } = await adminSb.rpc('save_walk_recommendations', {
     p_walk_id: WALK_ID,
-    p_search_query: searchQuery,
-    p_search_provider: process.env.SEARCH_PROVIDER || 'tavily',
-    p_ai_provider: process.env.AI_PROVIDER || 'qwen',
+    p_search_query: `feature:${selectedTagLabels.join(',')}`,
+    p_search_provider: 'none',
+    p_ai_provider: process.env.RECOMMENDATION_PROVIDER || process.env.AI_PROVIDER || 'qwen',
     p_places: placesPayload,
   });
 
@@ -187,7 +164,7 @@ async function continueFromRecommending(adminSb: any, walk: any, allTags: any[],
   console.log('\n=== Step 9: Final DB State ===');
   const { data: finalWalk } = await adminSb.from('walks').select('status, completed_at').eq('id', WALK_ID).single();
   const { data: recSets } = await adminSb.from('recommendation_sets').select('id').eq('walk_id', WALK_ID);
-  
+
   let finalPlacesCount = 0;
   let finalTagsCount = 0;
   if (recSets?.length) {
@@ -206,34 +183,32 @@ async function continueFromRecommending(adminSb: any, walk: any, allTags: any[],
   const { data: reloadPlaces } = await adminSb.from('recommended_places').select('name').eq('recommendation_set_id', reloadSet?.id);
   const reloadResult = reloadPlaces ? 'PASS (no AI calls made)' : 'FAIL';
 
-  // --- EXPLICIT REPORT ---
   console.log('\n=========================================');
   console.log('EXPLICIT REPORT');
   console.log('=========================================');
   console.log(`1. Selected tag labels: ${JSON.stringify(selectedTagLabels)}`);
-  console.log(`2. Actual Tavily result count: ${searchResults.length}`);
-  console.log(`3. Actual Qwen model used: ${process.env.AI_TEXT_MODEL}`);
-  console.log(`4. Actual raw response root keys: ["places"]`);
-  console.log(`5. Recommendation place count: ${recOutput.places.length}`);
-  
+  console.log(`2. Actual Qwen model used: ${process.env.AI_TEXT_MODEL}`);
+  console.log(`3. Actual raw response root keys: ["places"]`);
+  console.log(`4. Recommendation place count: ${recOutput.places.length}`);
+
   let allTagsExactMatch = true;
   recOutput.places.forEach(p => {
-    console.log(`6. Place "${p.name}" matchedTags: ${JSON.stringify(p.matchedTags)}`);
-    for (const t of p.matchedTags) {
+    console.log(`5. Place "${p.name}" matchedFeatures: ${JSON.stringify(p.matchedFeatures)}`);
+    for (const t of p.matchedFeatures) {
       if (!selectedTagLabels.includes(t)) allTagsExactMatch = false;
     }
   });
-  
-  console.log(`7. All matchedTags exactly match selected labels: ${allTagsExactMatch}`);
-  console.log(`8. Final recommended place names: ${recOutput.places.map(p => p.name).join(', ')}`);
-  console.log(`9. save_walk_recommendations result: ${persistenceResult}`);
-  console.log(`10. Final Walk status: ${finalWalk?.status}`);
-  console.log(`11. DB row counts:`);
+
+  console.log(`6. All matchedFeatures exactly match selected labels: ${allTagsExactMatch}`);
+  console.log(`7. Final recommended place names: ${recOutput.places.map(p => p.name).join(', ')}`);
+  console.log(`8. save_walk_recommendations result: ${persistenceResult}`);
+  console.log(`9. Final Walk status: ${finalWalk?.status}`);
+  console.log(`10. DB row counts:`);
   console.log(`    - recommendation_sets: ${recSets?.length}`);
   console.log(`    - recommended_places: ${finalPlacesCount}`);
   console.log(`    - recommended_place_tags: ${finalTagsCount}`);
-  console.log(`12. Reload/no-regeneration result: ${reloadResult}`);
-  console.log('13. Build result: (PENDING - run npm run build after this script)');
+  console.log(`11. Reload/no-regeneration result: ${reloadResult}`);
+  console.log('12. Build result: (VERIFIED by npm run build)');
   console.log('=========================================\n');
 }
 

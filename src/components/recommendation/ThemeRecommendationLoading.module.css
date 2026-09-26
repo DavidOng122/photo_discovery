@@ -1,0 +1,214 @@
+.screen {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  overflow: hidden;
+  background: #fff;
+  color: #111;
+  font-family: "Noto Sans JP", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+}
+
+.orbit {
+  position: relative;
+  width: 350px;
+  height: 330px;
+  margin: 150px auto 0;
+}
+
+.trails {
+  position: absolute;
+  inset: 0;
+  width: 350px;
+  height: 330px;
+  overflow: visible;
+}
+
+.trails path {
+  stroke-width: 9px;
+  stroke-linecap: round;
+  stroke-dasharray: 18 12;
+  opacity: 0.28;
+  filter: blur(4px);
+  animation: trailFlow 3.8s linear infinite;
+}
+
+.trailGreen { stroke: #bdebd9; }
+.trailBlue { stroke: #c6e3ff; animation-delay: -1.2s !important; }
+.trailCoral { stroke: #ffd6d0; animation-delay: -2.4s !important; }
+
+.themeTag {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  min-height: 62px;
+  align-items: center;
+  gap: 12px;
+  padding: 15px 22px;
+  border: 1px solid rgb(255 255 255 / 75%);
+  border-radius: 23px;
+  color: #17211d;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  backdrop-filter: blur(8px);
+}
+
+.icon {
+  display: grid;
+  width: 25px;
+  height: 25px;
+  place-items: center;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 23px;
+  font-weight: 500;
+}
+
+.tag1 {
+  top: 12px;
+  left: 18px;
+  background: rgb(219 249 235 / 88%);
+  box-shadow: 0 12px 24px rgb(97 210 159 / 23%), 0 0 24px rgb(166 241 207 / 30%);
+  animation: floatOne 3.8s ease-in-out infinite;
+}
+
+.tag2 {
+  top: 105px;
+  right: 6px;
+  background: rgb(225 241 255 / 90%);
+  color: #162735;
+  box-shadow: 0 12px 24px rgb(93 173 239 / 22%), 0 0 24px rgb(188 224 255 / 34%);
+  transform: rotate(7deg);
+  animation: floatTwo 4.2s ease-in-out infinite;
+}
+
+.tag3 {
+  top: 205px;
+  left: 30px;
+  background: rgb(255 235 232 / 90%);
+  color: #2b1c1b;
+  box-shadow: 0 12px 24px rgb(244 138 123 / 22%), 0 0 24px rgb(255 210 204 / 34%);
+  transform: rotate(-7deg);
+  animation: floatThree 4s ease-in-out infinite;
+}
+
+.count1 .tag1 {
+  top: 98px;
+  left: 50%;
+  transform: translateX(-50%);
+  animation-name: floatSingle;
+}
+
+.count1 .trails,
+.count1 .particleThree,
+.count1 .particleFour {
+  display: none;
+}
+
+.count2 .tag1 {
+  top: 47px;
+  left: 12px;
+}
+
+.count2 .tag2 {
+  top: 172px;
+  right: 10px;
+}
+
+.count2 .trailCoral,
+.count2 .particleFour {
+  display: none;
+}
+
+.particle {
+  position: absolute;
+  z-index: 1;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #68b7ff;
+  box-shadow: 0 0 13px rgb(77 164 246 / 48%);
+  animation: particlePulse 2.6s ease-in-out infinite;
+}
+
+.particleOne { top: 137px; left: 173px; }
+.particleTwo { top: 197px; right: 70px; animation-delay: -0.8s; }
+.particleThree { top: 176px; left: 70px; width: 6px; height: 6px; background: #9dd6d4; animation-delay: -1.6s; }
+.particleFour { top: 266px; left: 205px; width: 5px; height: 5px; background: #dceeff; animation-delay: -2.1s; }
+
+.copy {
+  width: calc(100% - 48px);
+  margin: 6px auto 0;
+  text-align: center;
+}
+
+.copy h1 {
+  margin: 0;
+  font-size: 25px;
+  font-weight: 700;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+}
+
+.copy p {
+  margin: 24px 0 0;
+  color: #a0a0a0;
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1.75;
+}
+
+@keyframes trailFlow {
+  0% { stroke-dashoffset: 0; opacity: 0.16; }
+  50% { opacity: 0.34; }
+  100% { stroke-dashoffset: -60; opacity: 0.16; }
+}
+
+@keyframes floatOne {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(-1deg); }
+  50% { transform: translate3d(5px, -8px, 0) rotate(1.5deg); }
+}
+
+@keyframes floatTwo {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(7deg); }
+  50% { transform: translate3d(-5px, 7px, 0) rotate(4deg); }
+}
+
+@keyframes floatThree {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(-7deg); }
+  50% { transform: translate3d(6px, -6px, 0) rotate(-4deg); }
+}
+
+@keyframes floatSingle {
+  0%, 100% { transform: translate3d(-50%, 0, 0) scale(1); }
+  50% { transform: translate3d(-50%, -8px, 0) scale(1.02); }
+}
+
+@keyframes particlePulse {
+  0%, 100% { opacity: 0.24; transform: scale(0.7); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+
+@media (max-width: 360px) {
+  .orbit {
+    width: 320px;
+    margin-top: 132px;
+    transform: scale(0.92);
+    transform-origin: top center;
+  }
+
+  .copy {
+    margin-top: -12px;
+  }
+
+  .copy h1 { font-size: 23px; }
+  .copy p { font-size: 15px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .themeTag,
+  .particle,
+  .trails path {
+    animation: none;
+  }
+}

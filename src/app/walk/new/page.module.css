@@ -1,0 +1,47 @@
+.directFlow {
+  position: relative;
+  min-height: 100vh;
+}
+
+.uploadError {
+  position: fixed;
+  z-index: 20;
+  right: max(24px, calc((100vw - 402px) / 2 + 24px));
+  bottom: 32px;
+  left: max(24px, calc((100vw - 402px) / 2 + 24px));
+  max-width: 354px;
+  margin: 0 auto;
+  padding: 16px;
+  border: 1px solid #f1d1cc;
+  border-radius: 16px;
+  background: rgb(255 255 255 / 96%);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 10%);
+  text-align: center;
+  backdrop-filter: blur(10px);
+}
+
+.uploadError p {
+  margin: 0;
+  color: #9f3a31;
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.errorActions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.errorActions button {
+  min-height: 36px;
+  padding: 7px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: #101828;
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}

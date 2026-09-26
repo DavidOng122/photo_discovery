@@ -10,13 +10,14 @@ export class OpenAIProvider implements AIProvider {
 
   constructor() {
     this.client = new OpenAI({
-      apiKey: process.env.AI_API_KEY,
+      apiKey: process.env.OPENAI_API_KEY ?? process.env.AI_API_KEY,
+      baseURL: process.env.OPENAI_BASE_URL || undefined,
     });
   }
 
   async analyzeWalk(input: AnalyzeWalkInput): Promise<AnalyzeWalkOutput> {
     const prompt = getAnalyzeWalkPrompt(input.images.length, input.location);
-    const model = process.env.AI_VISION_MODEL || "gpt-4o";
+    const model = process.env.OPENAI_VISION_MODEL || process.env.AI_VISION_MODEL || "gpt-4o";
 
     const content: any[] = [
       { type: "text", text: prompt }
@@ -54,7 +55,7 @@ export class OpenAIProvider implements AIProvider {
 
   async generateRecommendations(input: GenerateRecommendationsInput): Promise<RecommendationOutput> {
     const prompt = getRecommendPlacesPrompt(input);
-    const model = process.env.AI_TEXT_MODEL || "gpt-4o";
+    const model = process.env.OPENAI_RECOMMENDATION_MODEL || process.env.AI_TEXT_MODEL || "gpt-4o";
 
     const response = await this.client.chat.completions.parse({
       model,

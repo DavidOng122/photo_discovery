@@ -1,0 +1,212 @@
+.screen {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  overflow: hidden;
+  background: #fff;
+  color: #111;
+}
+
+.content {
+  position: absolute;
+  top: 164px;
+  left: 50%;
+  width: 402px;
+  height: 508px;
+  transform: translateX(-50%);
+}
+
+.heading {
+  position: absolute;
+  top: 0;
+  left: 72.01px;
+  display: flex;
+  width: 239.979px;
+  flex-direction: column;
+  align-items: center;
+}
+
+.heading h1 {
+  margin: 0;
+  color: #111;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+  font-size: 22px;
+  font-weight: 510;
+  letter-spacing: 0.216px;
+  text-align: center;
+  white-space: nowrap;
+  font-variation-settings: "wdth" 100;
+}
+
+.heading span {
+  display: block;
+  height: 37.8px;
+  line-height: 37.8px;
+}
+
+.progressTrack {
+  position: absolute;
+  top: 104px;
+  left: 106px;
+  width: 190px;
+  height: 3px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: #e5e5e5;
+}
+
+.progressLine {
+  width: 78px;
+  height: 3px;
+  border-radius: 99px;
+  background: #111;
+  animation: progressSweep 2.8s ease-in-out infinite;
+  will-change: transform;
+}
+
+.photoDeck {
+  position: absolute;
+  top: 177px;
+  left: 102px;
+  width: 180px;
+  height: 236px;
+}
+
+.leftMotion,
+.rightMotion {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  will-change: transform;
+}
+
+.leftMotion {
+  top: 55.25px;
+  left: -77px;
+  width: 176.482px;
+  height: 206.537px;
+  animation: leftDrift 4.8s ease-in-out infinite;
+}
+
+.rightMotion {
+  top: 41px;
+  left: 102.29px;
+  width: 171.052px;
+  height: 203.053px;
+  animation: rightDrift 5.1s ease-in-out -0.7s infinite;
+}
+
+.sideCard,
+.centerCard {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.13), 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.sideCard {
+  width: 136px;
+  height: 178px;
+  padding: 8px 8px 28px;
+  border-radius: 9px;
+}
+
+.leftMotion .sideCard { transform: rotate(-14.6deg); }
+.rightMotion .sideCard { transform: rotate(12.4deg); }
+
+.sidePhoto,
+.centerPhoto {
+  position: relative;
+  flex-shrink: 0;
+  overflow: hidden;
+  background: #ddd;
+}
+
+.sidePhoto {
+  width: 121px;
+  height: 161px;
+  border-radius: 3px;
+}
+
+.centerMotion {
+  position: absolute;
+  top: 36px;
+  left: 13px;
+  z-index: 2;
+  width: 147px;
+  height: 185px;
+  animation: centerFloat 3.6s ease-in-out infinite;
+  will-change: transform;
+}
+
+.centerCard {
+  width: 147px;
+  height: 185px;
+  padding: 8px 8px 28px;
+  border-radius: 11px;
+}
+
+.centerPhoto {
+  width: 132px;
+  height: 166px;
+  border-radius: 4px;
+}
+
+.sidePhoto img,
+.centerPhoto img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.waitingText {
+  position: absolute;
+  top: 486px;
+  left: 110px;
+  margin: 0;
+  color: #898888;
+  font-family: Arial, sans-serif;
+  font-size: 20px;
+  font-style: italic;
+  font-weight: 400;
+  line-height: 21.6px;
+  letter-spacing: 0.288px;
+  white-space: nowrap;
+}
+
+@keyframes centerFloat {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-5px) scale(1.018); }
+}
+
+@keyframes leftDrift {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  50% { transform: translate(-2px, 2px) rotate(-0.8deg); }
+}
+
+@keyframes rightDrift {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  50% { transform: translate(2px, 1px) rotate(0.7deg); }
+}
+
+@keyframes progressSweep {
+  0% { transform: translateX(-100%); }
+  50% { transform: translateX(72%); }
+  100% { transform: translateX(244%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progressLine,
+  .leftMotion,
+  .rightMotion,
+  .centerMotion {
+    animation: none;
+  }
+}

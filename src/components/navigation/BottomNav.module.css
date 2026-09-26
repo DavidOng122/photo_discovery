@@ -1,0 +1,84 @@
+.nav {
+  position: fixed;
+  z-index: 50;
+  bottom: 0;
+  left: 50%;
+  width: 100%;
+  max-width: 402px;
+  height: calc(84px + env(safe-area-inset-bottom));
+  padding-top: 12px;
+  padding-bottom: calc(5px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  background: #fff;
+  box-shadow: -3px -4px 5.55px rgb(0 0 0 / 6%);
+}
+
+.items {
+  display: flex;
+  justify-content: space-between;
+  width: min(310px, calc(100% - 80px));
+  height: 49px;
+  margin-left: 40px;
+}
+
+.item {
+  display: flex;
+  width: 50px;
+  height: 49px;
+  flex: 0 0 50px;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: #000;
+  font-family: Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  letter-spacing: 0.5px;
+  text-align: center;
+}
+
+.item img {
+  display: block;
+  flex: none;
+}
+
+.item:focus-visible {
+  border-radius: 4px;
+  outline: 2px solid #000;
+  outline-offset: 4px;
+}
+
+.cameraAction {
+  position: absolute;
+  top: -25px;
+  left: 50%;
+  display: block;
+  width: 62px;
+  height: 62px;
+  padding: 0;
+  transform: translateX(-50%);
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+
+.cameraAction img {
+  display: block;
+}
+
+.cameraAction:focus-visible {
+  outline: 3px solid #fff;
+  box-shadow: 0 0 0 5px #000;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .cameraAction {
+    transition: transform 160ms ease;
+  }
+
+  .cameraAction:hover {
+    transform: translateX(-50%) translateY(-2px);
+  }
+}

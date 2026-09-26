@@ -1,7 +1,6 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { MAX_PHOTOS } from '@/constants/images';
 import { validateImageFiles } from '@/lib/images/validateImage';
-import { compressImage } from '@/lib/images/compressImage';
 import { createWalk } from '@/lib/walks/createWalk';
 import { uploadWalkPhoto } from '@/lib/images/uploadWalkPhoto';
 import { deleteWalk } from '@/lib/walks/deleteWalk';
@@ -20,15 +19,20 @@ export function usePhotoUpload() {
   const [location, setLocation] = useState<string>('');
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const photosRef = useRef<PreviewFile[]>([]);
   
   const router = useRouter();
 
-  // Cleanup object urls to avoid memory leaks
+  useEffect(() => {
+    photosRef.current = photos;
+  }, [photos]);
+
+  // Cleanup object URLs when the upload flow is closed.
   useEffect(() => {
     return () => {
-      photos.forEach(p => URL.revokeObjectURL(p.previewUrl));
+      photosRef.current.forEach(p => URL.revokeObjectURL(p.previewUrl));
     };
-  }, [photos]);
+  }, []);
 
   const addFiles = useCallback((filesList: FileList | File[] | null) => {
     if (!filesList) return;
@@ -61,8 +65,8 @@ export function usePhotoUpload() {
     });
   }, []);
 
-  const uploadAndSubmit = async () => {
-    if (photos.length === 0) {
+  const uploadFiles = useCallback(async (files: File[]) => {
+    if (files.length === 0) {
       setError('写真を1枚以上選択してください。');
       return;
     }
@@ -84,21 +88,15 @@ export function usePhotoUpload() {
       // Create walk record
       walkId = await createWalk(user.id, location);
 
-      // Compress and upload each photo
-      for (let i = 0; i < photos.length; i++) {
-        const photo = photos[i];
-        
-        // Compress
-        const compressed = await compressImage(photo.file);
-        
-        // Upload and insert DB record
-        const result = await uploadWalkPhoto(user.id, walkId, compressed, i);
+      // Upload each original file. Cropping is only used by the preview grid.
+      for (let i = 0; i < files.length; i++) {
+        const result = await uploadWalkPhoto(user.id, walkId, files[i], i);
         uploadedPaths.push(result.storagePath);
       }
 
       // Success, redirect
       router.push(`/walk/${walkId}/discover`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Upload failed:', err);
       setError('写真のアップロードに失敗しました。もう一度お試しください。');
       
@@ -116,7 +114,28 @@ export function usePhotoUpload() {
     } finally {
       setIsUploading(false);
     }
-  };
+  }, [location, router]);
+
+  const uploadAndSubmit = useCallback(async (selectedIds?: ReadonlySet<string>) => {
+    const selectedPhotos = selectedIds ? photos.filter((photo) => selectedIds.has(photo.id)) : photos;
+    await uploadFiles(selectedPhotos.map((photo) => photo.file));
+  }, [photos, uploadFiles]);
+
+  const uploadFilesAndSubmit = useCallback(async (filesList: FileList | File[] | null) => {
+    if (!filesList) {
+      setError('写真を1枚以上選択してください。');
+      return;
+    }
+
+    const files = Array.from(filesList);
+    const validation = validateImageFiles(files, 0);
+    if (!validation.valid) {
+      setError(validation.error || 'Invalid files');
+      return;
+    }
+
+    await uploadFiles(files.slice(0, MAX_PHOTOS));
+  }, [uploadFiles]);
 
   return {
     photos,
@@ -127,6 +146,7 @@ export function usePhotoUpload() {
     addFiles,
     removePhoto,
     uploadAndSubmit,
+    uploadFilesAndSubmit,
     setError,
   };
 }

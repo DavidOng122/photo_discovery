@@ -1,0 +1,133 @@
+.home {
+  width: 100%;
+  min-height: 100vh;
+  overflow: hidden;
+  background: #f9f9f7;
+  color: #11110f;
+  font-family: "SF Pro Display", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+}
+
+.layout {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  gap: 48px;
+  padding-top: 138px;
+  padding-bottom: 58px;
+}
+
+.hero {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  gap: 36px;
+}
+
+.copy {
+  position: relative;
+  width: 314px;
+  height: 138px;
+  flex: 0 0 138px;
+}
+
+.copy h1 {
+  width: 348px;
+  height: 81px;
+  margin: 0;
+  color: #11110f;
+  font-size: 32px;
+  font-weight: 510;
+  line-height: 44px;
+  letter-spacing: 0.85px;
+  white-space: nowrap;
+}
+
+.copy p {
+  position: absolute;
+  top: 94px;
+  left: 0;
+  margin: 0;
+  color: #7d7a76;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 24.05px;
+  letter-spacing: 0.455px;
+  white-space: nowrap;
+}
+
+.collage {
+  position: relative;
+  width: calc(100% - 1px);
+  align-self: flex-start;
+  aspect-ratio: 401 / 394;
+  overflow: hidden;
+}
+
+.collageImage {
+  position: absolute;
+  top: -85.87%;
+  left: -9.07%;
+  display: block;
+  width: 333.3%;
+  height: 226.05%;
+  max-width: none;
+  object-fit: fill;
+}
+
+.cameraButton {
+  display: block;
+  width: 62px;
+  height: 62px;
+  flex: 0 0 62px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.cameraButton img {
+  display: block;
+}
+
+.cameraButton:focus-visible {
+  outline: 3px solid #fff;
+  box-shadow: 0 0 0 5px #11110f;
+}
+
+@media (max-width: 360px) {
+  .layout {
+    padding-top: 112px;
+  }
+
+  .copy {
+    width: calc(100% - 56px);
+    height: 130px;
+    flex-basis: 130px;
+  }
+
+  .copy h1 {
+    width: auto;
+    font-size: 28px;
+    line-height: 39px;
+  }
+
+  .copy p {
+    top: 86px;
+    font-size: 11.5px;
+    letter-spacing: 0.25px;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .cameraButton {
+    transition: transform 160ms ease;
+  }
+
+  .cameraButton:hover {
+    transform: translateY(-2px);
+  }
+}

@@ -1,0 +1,48 @@
+.wrapper {
+  position: absolute;
+  z-index: 2;
+  top: 21px;
+  right: 19px;
+  width: 35px;
+  height: 35px;
+}
+
+.button {
+  display: block;
+  width: 35px;
+  height: 35px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  transition: transform 140ms ease, filter 140ms ease;
+}
+
+.button img {
+  display: block;
+}
+
+.button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.saved {
+  filter: brightness(0.55);
+  transform: scale(1.06);
+}
+
+.error {
+  position: absolute;
+  top: 42px;
+  right: 0;
+  width: 180px;
+  color: #9f1239;
+  font-size: 11px;
+  text-align: right;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button { transition: none; }
+}

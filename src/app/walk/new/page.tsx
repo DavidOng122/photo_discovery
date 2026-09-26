@@ -1,85 +1,56 @@
 'use client';
 
-import { useState } from 'react';
-import { PageContainer } from '@/components/common/PageContainer';
+import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { AnalysisLoadingScreen } from '@/components/discovery/AnalysisLoadingScreen';
+import { usePendingPhotoSelection } from '@/components/upload/PhotoSelectionContext';
 import { usePhotoUpload } from '@/hooks/usePhotoUpload';
-import { PhotoPreviewGrid } from '@/components/upload/PhotoPreviewGrid';
-import { LocationInput } from '@/components/upload/LocationInput';
-import { UploadSubmitButton } from '@/components/upload/UploadSubmitButton';
-import { PhotoPickerSheet } from '@/components/upload/PhotoPickerSheet';
-import { AddPhotoButton } from '@/components/upload/AddPhotoButton';
-import { MAX_PHOTOS } from '@/constants/images';
+import styles from './page.module.css';
 
 export default function NewWalkPage() {
-  const {
-    photos,
-    location,
-    setLocation,
-    isUploading,
-    error,
-    addFiles,
-    removePhoto,
-    uploadAndSubmit
-  } = usePhotoUpload();
+  const router = useRouter();
+  const { pendingFiles, clearPendingFiles } = usePendingPhotoSelection();
+  const { error, uploadFilesAndSubmit } = usePhotoUpload();
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const uploadStarted = useRef(false);
+  const selectedFiles = useRef<File[]>([]);
 
-  const [showPicker, setShowPicker] = useState(false);
-  const canAddMore = photos.length < MAX_PHOTOS;
+  useEffect(() => {
+    if (uploadStarted.current) return;
 
-  const handleFilesSelected = (files: FileList | null) => {
-    addFiles(files);
-    setShowPicker(false);
+    if (pendingFiles.length === 0) {
+      router.replace('/');
+      return;
+    }
+
+    uploadStarted.current = true;
+    selectedFiles.current = [...pendingFiles];
+    const urls = selectedFiles.current.slice(0, 3).map((file) => URL.createObjectURL(file));
+    setPreviewUrls(urls);
+    clearPendingFiles();
+    void uploadFilesAndSubmit(selectedFiles.current);
+
+  }, [clearPendingFiles, pendingFiles, router, uploadFilesAndSubmit]);
+
+  const retryUpload = () => {
+    if (selectedFiles.current.length > 0) {
+      void uploadFilesAndSubmit(selectedFiles.current);
+    }
   };
 
   return (
-    <PageContainer>
-      <h1 style={{ fontSize: '1.5rem', margin: 0 }}>新しい発見</h1>
-      
+    <div className={styles.directFlow}>
+      <AnalysisLoadingScreen photoUrls={previewUrls} />
+
       {error && (
-        <div style={{ 
-          padding: '1rem', 
-          backgroundColor: '#fee2e2', 
-          color: '#b91c1c', 
-          borderRadius: '8px',
-          marginTop: '1rem',
-          fontSize: '0.875rem'
-        }}>
-          {error}
+        <div className={styles.uploadError} role="alert">
+          <p>{error}</p>
+          <div className={styles.errorActions}>
+            <button type="button" onClick={() => router.replace('/')}>戻る</button>
+            <button type="button" onClick={retryUpload}>もう一度試す</button>
+          </div>
         </div>
       )}
-
-      <PhotoPreviewGrid photos={photos} onRemove={removePhoto} />
-
-      {canAddMore && !showPicker && (
-        <AddPhotoButton 
-          onClick={() => setShowPicker(true)} 
-          disabled={isUploading} 
-        />
-      )}
-
-      {canAddMore && showPicker && (
-        <PhotoPickerSheet 
-          onFilesSelected={handleFilesSelected} 
-          disabled={isUploading} 
-        />
-      )}
-
-      {photos.length >= MAX_PHOTOS && (
-        <p style={{ color: 'var(--muted)', fontSize: '0.875rem', marginTop: '1rem', textAlign: 'center' }}>
-          最大10枚まで追加できます。
-        </p>
-      )}
-
-      <LocationInput 
-        value={location} 
-        onChange={setLocation} 
-        disabled={isUploading} 
-      />
-
-      <UploadSubmitButton 
-        onClick={uploadAndSubmit} 
-        isUploading={isUploading} 
-        disabled={photos.length === 0}
-      />
-    </PageContainer>
+    </div>
   );
 }

@@ -1,0 +1,66 @@
+.screen {
+  min-height: 100vh;
+  overflow: hidden;
+  background: #fff;
+  color: #000;
+  font-family: "SF Pro Display", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+}
+
+.results {
+  padding-top: 152px;
+}
+
+.results h1 {
+  margin: 0 31px 30px;
+  font-size: 27px;
+  font-weight: 510;
+  line-height: 32px;
+  letter-spacing: 0;
+}
+
+.status {
+  width: calc(100% - 48px);
+  margin: 0 auto;
+  padding-top: 128px;
+  text-align: center;
+}
+
+.status h2 {
+  margin: 0 0 16px;
+  font-size: 20px;
+}
+
+.status p {
+  margin: 0;
+  color: #737373;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.errorState h2 {
+  color: #c24141;
+  font-size: 18px;
+}
+
+.errorState p {
+  margin-bottom: 32px;
+}
+
+.errorState button {
+  padding: 12px 24px;
+  border: 0;
+  border-radius: 999px;
+  background: #101828;
+  color: #fff;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+@media (max-width: 350px) {
+  .results h1 {
+    margin-left: 19px;
+    margin-right: 19px;
+  }
+}
