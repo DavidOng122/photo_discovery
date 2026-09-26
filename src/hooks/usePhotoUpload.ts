@@ -65,10 +65,8 @@ export function usePhotoUpload() {
     });
   }, []);
 
-  const uploadAndSubmit = async (selectedIds?: ReadonlySet<string>) => {
-    const selectedPhotos = selectedIds ? photos.filter((photo) => selectedIds.has(photo.id)) : photos;
-
-    if (selectedPhotos.length === 0) {
+  const uploadFiles = useCallback(async (files: File[]) => {
+    if (files.length === 0) {
       setError('写真を1枚以上選択してください。');
       return;
     }
@@ -91,9 +89,8 @@ export function usePhotoUpload() {
       walkId = await createWalk(user.id, location);
 
       // Upload each original file. Cropping is only used by the preview grid.
-      for (let i = 0; i < selectedPhotos.length; i++) {
-        const photo = selectedPhotos[i];
-        const result = await uploadWalkPhoto(user.id, walkId, photo.file, i);
+      for (let i = 0; i < files.length; i++) {
+        const result = await uploadWalkPhoto(user.id, walkId, files[i], i);
         uploadedPaths.push(result.storagePath);
       }
 
@@ -117,7 +114,28 @@ export function usePhotoUpload() {
     } finally {
       setIsUploading(false);
     }
-  };
+  }, [location, router]);
+
+  const uploadAndSubmit = useCallback(async (selectedIds?: ReadonlySet<string>) => {
+    const selectedPhotos = selectedIds ? photos.filter((photo) => selectedIds.has(photo.id)) : photos;
+    await uploadFiles(selectedPhotos.map((photo) => photo.file));
+  }, [photos, uploadFiles]);
+
+  const uploadFilesAndSubmit = useCallback(async (filesList: FileList | File[] | null) => {
+    if (!filesList) {
+      setError('写真を1枚以上選択してください。');
+      return;
+    }
+
+    const files = Array.from(filesList);
+    const validation = validateImageFiles(files, 0);
+    if (!validation.valid) {
+      setError(validation.error || 'Invalid files');
+      return;
+    }
+
+    await uploadFiles(files.slice(0, MAX_PHOTOS));
+  }, [uploadFiles]);
 
   return {
     photos,
@@ -128,6 +146,7 @@ export function usePhotoUpload() {
     addFiles,
     removePhoto,
     uploadAndSubmit,
+    uploadFilesAndSubmit,
     setError,
   };
 }
