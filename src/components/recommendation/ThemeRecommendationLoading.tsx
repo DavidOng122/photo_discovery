@@ -36,12 +36,12 @@ export function ThemeRecommendationLoading({ tags }: Props) {
 
       <div className={styles.copy}>
         <h1>
-          選んだテーマから
+          選んだ特徴から
           <br />
-          次の発見を探しています…
+          次の場所を探しています…
         </h1>
         <p>
-          東京の街を分析しています。
+          似た雰囲気の場所を見つけています。
           <br />
           少しお待ちください。
         </p>

@@ -1,7 +1,13 @@
-import { SearchResult } from "../search/types";
 import { AnalyzeWalkOutput, RecommendationOutput } from "./schemas";
 
 export type DiscoveryCategory = "Culture" | "Architecture" | "Nature" | "History" | "Local Life";
+export type FeatureType = "culture" | "style" | "atmosphere";
+
+export interface DiscoveryFeature {
+  label: string;
+  type: FeatureType;
+  reason: string;
+}
 
 export interface AnalyzeWalkInput {
   images: Array<{
@@ -13,14 +19,15 @@ export interface AnalyzeWalkInput {
 }
 
 export interface GenerateRecommendationsInput {
-  selectedTags: Array<{
+  selectedTags?: Array<{
     label: string;
-    category: DiscoveryCategory;
+    category?: DiscoveryCategory | string;
     reason: string;
   }>;
+  selectedFeatures?: DiscoveryFeature[];
+  currentCity?: string | null;
   originalLocation?: string | null;
-  searchResults: SearchResult[];
-  excludedPlaceNames: string[];
+  excludedPlaceNames?: string[];
   outputLanguage: "ja";
 }
 

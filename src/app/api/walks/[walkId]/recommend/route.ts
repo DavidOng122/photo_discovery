@@ -1,9 +1,24 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth/getCurrentUser";
-import { getSearchProvider } from "@/lib/search";
-import { buildSearchQuery } from "@/lib/search/buildSearchQuery";
 import { generateRecommendations } from "@/lib/ai/generateRecommendations";
+
+function toFeatureType(category?: string): "culture" | "style" | "atmosphere" {
+  switch (category) {
+    case "Culture":
+      return "culture";
+    case "Architecture":
+      return "style";
+    case "History":
+      return "culture";
+    case "Nature":
+      return "atmosphere";
+    case "Local Life":
+      return "atmosphere";
+    default:
+      return "style";
+  }
+}
 
 export async function POST(
   _request: Request,
@@ -18,7 +33,6 @@ export async function POST(
 
     const supabase = await createClient();
 
-    // Load walk
     const { data: walk, error: walkErr } = await supabase
       .from("walks")
       .select("id, status, location, user_id")
@@ -31,6 +45,7 @@ export async function POST(
     if (walk.user_id !== user.id) {
       return NextResponse.json({ error: { code: "UNAUTHORIZED", message: "Unauthorized" } }, { status: 403 });
     }
+
     const existingResult = await loadCompletedRecommendations(supabase, walkId, user.id);
 
     if (walk.status === "COMPLETED") {
@@ -48,7 +63,6 @@ export async function POST(
       return NextResponse.json({ error: { code: "PERSISTENCE_FAILED", message: "Orphaned recommendation set found for RECOMMENDING walk." } }, { status: 500 });
     }
 
-    // Load selected tags
     const { data: selectedTags, error: tagsErr } = await supabase
       .from("discovery_tags")
       .select("id, label, category, reason")
@@ -62,12 +76,11 @@ export async function POST(
       return NextResponse.json({ error: { code: "INVALID_SELECTED_TAGS", message: "Too many selected tags" } }, { status: 400 });
     }
 
-    // Load excluded place names from this user's history
     const { data: userWalks } = await supabase
       .from("walks")
       .select("id")
       .eq("user_id", user.id);
-    
+
     let previousPlaceNames: string[] = [];
     if (userWalks && userWalks.length > 0) {
       const walkIds = userWalks.map((w: any) => w.id);
@@ -75,14 +88,14 @@ export async function POST(
         .from("recommendation_sets")
         .select("id")
         .in("walk_id", walkIds);
-        
+
       if (userSets && userSets.length > 0) {
         const setIds = userSets.map((s: any) => s.id);
         const { data: previousPlaces } = await supabase
           .from("recommended_places")
           .select("name")
           .in("recommendation_set_id", setIds);
-          
+
         if (previousPlaces) {
           previousPlaceNames = previousPlaces.map((p: any) => p.name);
         }
@@ -99,44 +112,23 @@ export async function POST(
       ...(savedPlaces?.map((p: any) => p.name) ?? []),
     ];
 
-    // Build search query and search
-    const tagLabels = selectedTags.map((t: any) => t.label);
-    const searchQuery = buildSearchQuery(tagLabels, walk.location);
-    const searchProvider = getSearchProvider();
+    const selectedFeatures = selectedTags.map((tag: any) => ({
+      label: tag.label,
+      type: toFeatureType(tag.category),
+      reason: tag.reason ?? "選択した特徴に基づくおすすめです。",
+    }));
 
-    let searchResults;
-    try {
-      searchResults = await searchProvider.searchPlaces({ query: searchQuery, maxResults: 10 });
-    } catch (err) {
-      console.error("Tavily search failed:", err);
-      return NextResponse.json({ error: { code: "SEARCH_FAILED", message: "おすすめ場所を見つけられませんでした。" } }, { status: 502 });
-    }
-
-    // Retry with broader query if insufficient results
-    if (searchResults.length < 3) {
-      try {
-        const broaderQuery = `東京 散歩 街歩き 発見 おすすめ 観光スポット 名所 文化 歴史 自然`;
-        searchResults = await searchProvider.searchPlaces({ query: broaderQuery, maxResults: 10 });
-      } catch (err) {
-        console.error("Broader Tavily search failed:", err);
-      }
-    }
-
-    if (searchResults.length === 0) {
-      return NextResponse.json({ error: { code: "INSUFFICIENT_SEARCH_RESULTS", message: "おすすめ場所を見つけられませんでした。" } }, { status: 502 });
-    }
-
-    // Generate recommendations via AI
     let recommendationOutput;
     try {
       recommendationOutput = await generateRecommendations({
-        selectedTags: selectedTags.map((t: any) => ({
-          label: t.label,
-          category: t.category,
-          reason: t.reason,
+        selectedFeatures,
+        selectedTags: selectedTags.map((tag: any) => ({
+          label: tag.label,
+          category: tag.category,
+          reason: tag.reason,
         })),
+        currentCity: walk.location ?? "Tokyo",
         originalLocation: walk.location,
-        searchResults,
         excludedPlaceNames: excludedNames,
         outputLanguage: "ja",
       });
@@ -145,23 +137,20 @@ export async function POST(
       return NextResponse.json({ error: { code: "AI_RECOMMENDATION_FAILED", message: "おすすめ場所を見つけられませんでした。" } }, { status: 500 });
     }
 
-    // Persist atomically via RPC
     const placesPayload = recommendationOutput.places.map((p) => ({
       name: p.name,
       area: p.area ?? null,
-      description: p.description,
+      description: p.reason,
       imageUrl: p.imageUrl ?? null,
       googleMapsQuery: p.googleMapsQuery,
-      sourceUrl: p.sourceUrl,
-      sourceDomain: p.sourceDomain,
-      matchedTags: p.matchedTags,
+      matchedTags: p.matchedFeatures,
     }));
 
     const { error: rpcErr } = await supabase.rpc("save_walk_recommendations", {
       p_walk_id: walkId,
-      p_search_query: searchQuery,
-      p_search_provider: process.env.SEARCH_PROVIDER || "tavily",
-      p_ai_provider: process.env.AI_PROVIDER || "openai",
+      p_search_query: `feature:${selectedFeatures.map((f) => f.label).join(",")}`,
+      p_search_provider: "none",
+      p_ai_provider: process.env.RECOMMENDATION_PROVIDER || process.env.AI_PROVIDER || "qwen",
       p_places: placesPayload,
     });
 
@@ -170,7 +159,6 @@ export async function POST(
       return NextResponse.json({ error: { code: "PERSISTENCE_FAILED", message: "おすすめ場所を保存できませんでした。" } }, { status: 500 });
     }
 
-    // Load the freshly persisted places (to get DB-assigned IDs + save state)
     const freshResult = await loadCompletedRecommendations(supabase, walkId, user.id);
     return NextResponse.json(freshResult ?? { walkId, status: "COMPLETED", places: [] });
   } catch (err: any) {
@@ -179,7 +167,6 @@ export async function POST(
   }
 }
 
-// Helper: load existing recommendations with save state
 async function loadCompletedRecommendations(supabase: any, walkId: string, userId: string) {
   const { data: set } = await supabase
     .from("recommendation_sets")
@@ -198,7 +185,6 @@ async function loadCompletedRecommendations(supabase: any, walkId: string, userI
 
   const placeIds = places.map((p: any) => p.id);
 
-  // Load saved state for this user in one query
   const { data: savedRows } = await supabase
     .from("saved_places")
     .select("id, source_recommended_place_id")

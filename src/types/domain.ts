@@ -28,7 +28,6 @@ export interface RecommendedPlace {
   description: string;
   imageUrl?: string | null;
   googleMapsQuery: string;
-  sourceUrl?: string | null;
   matchedTags: string[];
 }
 

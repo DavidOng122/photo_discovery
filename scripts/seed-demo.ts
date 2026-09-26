@@ -48,7 +48,7 @@ async function seedDemo(userId: string) {
   const { data: set1, error: serr1 } = await supabase.from('recommendation_sets').insert({
     walk_id: walk1.id,
     search_query: '東京 港町の日常 異文化が混ざる街 散歩 街歩き おすすめ場所 観光 名所',
-    search_provider: 'tavily',
+    search_provider: 'none',
     ai_provider: 'openai',
   }).select('id').single();
   if (serr1) throw serr1;
@@ -60,8 +60,7 @@ async function seedDemo(userId: string) {
     area: '福生市',
     description: '横田基地に面した国道16号沿いのエリア。アメリカの雰囲気が漂うカフェや雑貨店が立ち並び、異国情緒あふれる街歩きが楽しめます。',
     google_maps_query: '福生ベースサイドストリート 福生市 東京',
-    source_url: 'https://ja.wikipedia.org/wiki/%E7%A6%8F%E7%94%9F%E3%83%99%E3%83%BC%E3%82%B9%E3%82%B5%E3%82%A4%E3%83%89%E3%82%B9%E3%83%88%E3%83%AA%E3%83%BC%E3%83%88',
-    source_domain: 'wikipedia.org',
+
   }).select('id').single();
   if (perr1) throw perr1;
 
@@ -96,7 +95,7 @@ async function seedDemo(userId: string) {
   const { data: set2, error: serr2 } = await supabase.from('recommendation_sets').insert({
     walk_id: walk2.id,
     search_query: '東京 昭和レトロな街並み 散歩 街歩き おすすめ場所 観光 名所',
-    search_provider: 'tavily',
+    search_provider: 'none',
     ai_provider: 'openai',
   }).select('id').single();
   if (serr2) throw serr2;
@@ -108,8 +107,6 @@ async function seedDemo(userId: string) {
     area: '葛飾区',
     description: '昔ながらの参道や古い建物が残るエリア。映画の舞台にもなった情緒ある風景の中をのんびり歩くことができます。',
     google_maps_query: '柴又帝釈天 葛飾区 東京',
-    source_url: 'https://ja.wikipedia.org/wiki/%E6%9F%B4%E5%8F%88%E5%B8%9D%E9%87%88%E5%A4%A9',
-    source_domain: 'wikipedia.org',
   }).select('id').single();
   if (perr2) throw perr2;
 
@@ -143,7 +140,7 @@ async function seedDemo(userId: string) {
   const { data: set3, error: serr3 } = await supabase.from('recommendation_sets').insert({
     walk_id: walk3.id,
     search_query: '東京 都市の中の自然 散歩 街歩き おすすめ場所 観光 名所',
-    search_provider: 'tavily',
+    search_provider: 'none',
     ai_provider: 'openai',
   }).select('id').single();
   if (serr3) throw serr3;
@@ -155,8 +152,6 @@ async function seedDemo(userId: string) {
     area: '世田谷区',
     description: '東京23区唯一の渓谷で、豊かな自然と四季折々の植物を楽しむことができる、都会のオアシスのような場所です。',
     google_maps_query: '等々力渓谷 世田谷区 東京',
-    source_url: 'https://ja.wikipedia.org/wiki/%E7%AD%89%E3%80%85%E5%8A%9B%E6%B8%93%E8%B0%B7',
-    source_domain: 'wikipedia.org',
   }).select('id').single();
   if (perr3) throw perr3;
 

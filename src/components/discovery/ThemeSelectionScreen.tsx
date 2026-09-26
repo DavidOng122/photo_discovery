@@ -96,12 +96,12 @@ export function ThemeSelectionScreen({
 
       <div className={styles.content}>
         <div className={styles.heading} data-node-id="70:25">
-          <h1 data-node-id="70:26">見つかったテーマ</h1>
+          <h1 data-node-id="70:26">写真から、こんな特徴を見つけました</h1>
         </div>
-        <p className={styles.description} data-node-id="70:29">写真から、こんなテーマが見つかりました</p>
-        <p className={styles.hint} data-node-id="70:32">気になるテーマを1〜3個選んでください</p>
+        <p className={styles.description} data-node-id="70:29">写真から、こんな特徴を見つけました</p>
+        <p className={styles.hint} data-node-id="70:32">気になる特徴を1〜3個選んでください</p>
 
-        <div className={styles.tagList} aria-label="見つかったテーマ">
+        <div className={styles.tagList} aria-label="見つかった特徴">
           {tags.map((tag, index) => {
             const selected = selectedIds.has(tag.id);
             const unavailable = !selected && selectionLimitReached;

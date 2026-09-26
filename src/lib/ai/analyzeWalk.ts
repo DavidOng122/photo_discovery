@@ -3,7 +3,7 @@ import { AnalyzeWalkInput } from "./provider";
 import { AnalyzeWalkOutput, AnalyzeWalkOutputSchema } from "./schemas";
 
 export async function analyzeWalk(input: AnalyzeWalkInput): Promise<AnalyzeWalkOutput> {
-  const provider = getAIProvider();
+  const provider = getAIProvider("vision");
   
   let result: AnalyzeWalkOutput | null = null;
   let lastError: Error | null = null;
