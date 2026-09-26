@@ -3,6 +3,8 @@
 import React, { useEffect, useRef, useState, use } from 'react';
 import { RecommendationCarousel } from '@/components/recommendation/RecommendationCarousel';
 import type { RecommendationCardData } from '@/components/recommendation/RecommendationCard';
+import { ThemeRecommendationLoading } from '@/components/recommendation/ThemeRecommendationLoading';
+import type { ThemeVisualData } from '@/lib/discovery/themeVisuals';
 import styles from './page.module.css';
 
 type PageStatus = 'LOADING' | 'GENERATING' | 'COMPLETED' | 'ERROR';
@@ -16,6 +18,7 @@ export default function RecommendationsPage({ params }: { params: Promise<{ walk
 
   const [pageStatus, setPageStatus] = useState<PageStatus>('LOADING');
   const [places, setPlaces] = useState<RecommendationCardData[]>([]);
+  const [selectedTags, setSelectedTags] = useState<ThemeVisualData[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
   const hasTriggered = useRef(false);
 
@@ -51,9 +54,21 @@ export default function RecommendationsPage({ params }: { params: Promise<{ walk
 
     const init = async () => {
       try {
+        try {
+          const cachedTags = sessionStorage.getItem(`walk:${walkId}:selected-tags`);
+          if (cachedTags) {
+            const parsedTags: unknown = JSON.parse(cachedTags);
+            if (Array.isArray(parsedTags)) setSelectedTags(parsedTags);
+          }
+        } catch {
+          // Selected tags are loaded from the walk response below as a fallback.
+        }
+
         const res = await fetch(`/api/walks/${walkId}`);
         if (!res.ok) throw new Error('Walk not found');
-        const { walk, recommendations } = await res.json();
+        const { walk, recommendations, tags } = await res.json();
+        const selected = (tags ?? []).filter((tag: { selected?: boolean }) => tag.selected);
+        if (selected.length > 0) setSelectedTags(selected);
 
         if (walk.status === 'COMPLETED') {
           if (recommendations?.places?.length) {
@@ -87,20 +102,11 @@ export default function RecommendationsPage({ params }: { params: Promise<{ walk
   return (
     <section className={styles.screen} data-node-id="13:102">
       {pageStatus === 'LOADING' && (
-        <div className={styles.status}>
-          <p>読み込み中…</p>
-        </div>
+        <ThemeRecommendationLoading tags={selectedTags} />
       )}
 
       {pageStatus === 'GENERATING' && (
-        <div className={styles.status}>
-          <h2>
-            次の発見につながる場所を探しています…
-          </h2>
-          <p>
-            東京の街を分析しています。少しお待ちください。
-          </p>
-        </div>
+        <ThemeRecommendationLoading tags={selectedTags} />
       )}
 
       {pageStatus === 'ERROR' && (

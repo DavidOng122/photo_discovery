@@ -6,6 +6,7 @@ import { PageContainer } from '@/components/common/PageContainer';
 import { MIN_SELECTED_TAGS, MAX_SELECTED_TAGS } from '@/constants/discovery';
 import { AnalysisLoadingScreen } from '@/components/discovery/AnalysisLoadingScreen';
 import { ThemeSelectionScreen } from '@/components/discovery/ThemeSelectionScreen';
+import { ThemeRecommendationLoading } from '@/components/recommendation/ThemeRecommendationLoading';
 
 interface TagData {
   id: string;
@@ -104,6 +105,13 @@ export default function DiscoverPage({ params }: { params: Promise<{ walkId: str
     setIsConfirming(true);
     setConfirmError('');
 
+    const selectedTags = result?.tags.filter((tag) => selectedIds.has(tag.id)) ?? [];
+    try {
+      sessionStorage.setItem(`walk:${walkId}:selected-tags`, JSON.stringify(selectedTags));
+    } catch {
+      // The API remains the source of truth if session storage is unavailable.
+    }
+
     try {
       const response = await fetch(`/api/walks/${walkId}/confirm-tags`, {
         method: 'POST',
@@ -129,6 +137,10 @@ export default function DiscoverPage({ params }: { params: Promise<{ walkId: str
         <AnalysisLoadingScreen photoUrls={photoUrls} />
       )}
 
+      {status === 'TAG_SELECTION' && result && isConfirming && (
+        <ThemeRecommendationLoading tags={result.tags.filter((tag) => selectedIds.has(tag.id))} />
+      )}
+
       {status === 'ERROR' && (
         <PageContainer>
           <div style={{ textAlign: 'center', marginTop: '4rem' }}>
@@ -141,7 +153,7 @@ export default function DiscoverPage({ params }: { params: Promise<{ walkId: str
         </PageContainer>
       )}
 
-      {status === 'TAG_SELECTION' && result && (
+      {status === 'TAG_SELECTION' && result && !isConfirming && (
         <ThemeSelectionScreen
           tags={result.tags}
           selectedIds={selectedIds}
