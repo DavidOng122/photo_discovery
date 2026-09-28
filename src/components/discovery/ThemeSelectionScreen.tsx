@@ -24,34 +24,32 @@ interface ThemeSelectionScreenProps {
 const MAX_SELECTIONS = 3;
 
 const tagTones = [
-  { background: '#e8f5e2', icon: '#c8e6b8' },
-  { background: '#ede8f5', icon: '#d4c8e6' },
-  { background: '#e2eef5', icon: '#b8d4e6' },
-  { background: '#fdecea', icon: '#f8c8c0' },
-  { background: '#fdeef5', icon: '#f5c8df' },
-  { background: '#fdf8e2', icon: '#f0e490' },
-  { background: '#ebebeb', icon: '#d0d0d0' },
-  { background: '#f5ede2', icon: '#e6d0b8' },
-  { background: '#f0f0ff', icon: '#d8d8f8' },
-  { background: '#e2f0f5', icon: '#b8d8e8' },
+  { background: '#fff8f1', border: '#ffcfae', foreground: '#f05c2e' },
+  { background: '#f1faff', border: '#8fd8f4', foreground: '#1679bd' },
+  { background: '#f0fcf3', border: '#ace9bb', foreground: '#2cac5a' },
+  { background: '#f7f4ff', border: '#cdbefc', foreground: '#7958ee' },
+  { background: '#f4f5f6', border: '#dde0e3', foreground: '#686d72' },
+  { background: '#effcfc', border: '#9de8eb', foreground: '#168896' },
+  { background: '#effaff', border: '#82d9f4', foreground: '#087fb4' },
+  { background: '#effcfa', border: '#a6eae2', foreground: '#379796' },
 ] as const;
 
 const iconRules = [
-  { pattern: /住宅|建築|家/, icon: '🏠' },
-  { pattern: /英語|本|文学|歴史/, icon: '📖' },
-  { pattern: /基地|異国/, icon: '✈️' },
-  { pattern: /港|船/, icon: '🚢' },
-  { pattern: /神社|寺|鳥居/, icon: '⛩️' },
-  { pattern: /街角|提灯|路地/, icon: '🏮' },
-  { pattern: /坂|山|丘/, icon: '⛰️' },
-  { pattern: /喫茶|カフェ|珈琲/, icon: '☕' },
-  { pattern: /商店|市場|店/, icon: '🏪' },
-  { pattern: /海|水辺|浜/, icon: '🌊' },
+  { pattern: /食|暮らし|喫茶|カフェ|珈琲|商店|市場|店/, assets: ['asset-06.svg'] },
+  { pattern: /港|船/, assets: ['asset-01.svg', 'asset-02.svg'] },
+  { pattern: /坂|山|丘/, assets: ['asset-11.svg', 'asset-05.svg', 'asset-08.svg'] },
+  { pattern: /神社|寺|鳥居|信仰/, assets: ['asset-04.svg'] },
+  { pattern: /街角|提灯|路地/, assets: ['asset-12.svg'] },
+  { pattern: /海風|風|質感/, assets: ['asset-09.svg'] },
+  { pattern: /海|水辺|浜/, assets: ['asset-10.svg'] },
+  { pattern: /緑|自然|植物/, assets: ['asset-13.svg', 'asset-14.svg'] },
 ] as const;
 
-function getTagIcon(tag: ThemeTag) {
+const globeAssets = ['asset-03.svg', 'asset-07.svg'] as const;
+
+function getTagIconAssets(tag: ThemeTag) {
   const searchableText = `${tag.label} ${tag.category}`;
-  return iconRules.find((rule) => rule.pattern.test(searchableText))?.icon ?? '✨';
+  return iconRules.find((rule) => rule.pattern.test(searchableText))?.assets ?? globeAssets;
 }
 
 export function ThemeSelectionScreen({
@@ -66,20 +64,18 @@ export function ThemeSelectionScreen({
   const selectionLimitReached = selectedIds.size >= MAX_SELECTIONS;
 
   return (
-    <section className={styles.screen} data-node-id="70:178">
-      <header className={styles.header} data-node-id="70:184">
+    <section className={styles.screen} data-node-id="98:11">
+      <header className={styles.header} data-node-id="98:12">
         <button
           type="button"
           className={styles.backButton}
           onClick={onBack}
           disabled={isSubmitting}
           aria-label="前の画面に戻る"
-          data-node-id="70:185"
+          data-node-id="98:13"
         >
-          <Image src="/figma/theme-selection/back.svg" alt="" width={20} height={20} unoptimized />
+          <Image src="/figma/theme-selection-v2/asset-00.svg" alt="" width={24} height={24} unoptimized />
         </button>
-
-        <span className={styles.headerSpacer} aria-hidden="true" data-node-id="70:188" />
 
         <button
           type="button"
@@ -87,29 +83,30 @@ export function ThemeSelectionScreen({
           onClick={onNext}
           disabled={selectedIds.size === 0 || isSubmitting}
           aria-busy={isSubmitting}
-          data-node-id="70:191"
+          data-node-id="98:16"
         >
-          <span data-node-id="70:192">次へ</span>
-          <Image src="/figma/theme-selection/next.svg" alt="" width={14} height={14} unoptimized />
+          <span data-node-id="98:17">次へ</span>
         </button>
       </header>
 
       <div className={styles.content}>
-        <div className={styles.heading} data-node-id="70:25">
-          <h1 data-node-id="70:26">写真から、こんな特徴を見つけました</h1>
+        <h1 className={styles.heading} data-node-id="98:22">見つかった視点</h1>
+        <div className={styles.introduction} data-node-id="98:24">
+          <p className={styles.description} data-node-id="98:25">写真から、こんな視点が見つかりました</p>
+          <p className={styles.hint}>気になるものを1〜3個選んでください</p>
         </div>
-        <p className={styles.description} data-node-id="70:29">写真から、こんな特徴を見つけました</p>
-        <p className={styles.hint} data-node-id="70:32">気になる特徴を1〜3個選んでください</p>
 
-        <div className={styles.tagList} aria-label="見つかった特徴">
+        <div className={styles.tagList} aria-label="見つかった視点" data-node-id="98:28">
           {tags.map((tag, index) => {
             const selected = selectedIds.has(tag.id);
             const unavailable = !selected && selectionLimitReached;
             const tone = tagTones[index % tagTones.length];
             const tagStyle = {
               '--tag-background': tone.background,
-              '--tag-icon-background': tone.icon,
+              '--tag-border': tone.border,
+              '--tag-foreground': tone.foreground,
             } as CSSProperties;
+            const iconAssets = getTagIconAssets(tag);
 
             return (
               <button
@@ -122,7 +119,18 @@ export function ThemeSelectionScreen({
                 aria-pressed={selected}
                 title={tag.reason}
               >
-                <span className={styles.tagIcon}>{getTagIcon(tag)}</span>
+                <span className={styles.tagIcon} aria-hidden="true">
+                  {iconAssets.map((asset) => (
+                    <Image
+                      key={asset}
+                      src={`/figma/theme-selection-v2/${asset}`}
+                      alt=""
+                      fill
+                      sizes="20px"
+                      unoptimized
+                    />
+                  ))}
+                </span>
                 <span className={styles.tagLabel}>{tag.label}</span>
               </button>
             );
