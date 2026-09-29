@@ -1,12 +1,16 @@
 import { getAIProvider } from "./index";
 import { GenerateRecommendationsInput } from "./provider";
 import { RecommendationOutputSchema } from "./schemas";
-import { EnrichedRecommendationOutput, enrichPlaceResultsWithGooglePlaces } from "@/lib/maps/googlePlaces";
+import {
+  EnrichedRecommendationOutput,
+  enrichPlaceResultsWithGooglePlaces,
+  getGooglePlacesApiKey,
+} from "@/lib/maps/googlePlaces";
 
 export async function generateRecommendations(
   input: GenerateRecommendationsInput
 ): Promise<{ data: EnrichedRecommendationOutput; metadata: Record<string, unknown> }> {
-  if (!process.env.GOOGLE_PLACES_API_KEY && process.env.MOCK_GOOGLE_PLACES !== "true") {
+  if (!getGooglePlacesApiKey() && process.env.MOCK_GOOGLE_PLACES !== "true") {
     throw new Error("GOOGLE_PLACES_API_KEY is missing");
   }
 

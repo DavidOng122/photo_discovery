@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentUser } from '@/lib/auth/getCurrentUser';
+import { getGooglePlacesApiKey } from '@/lib/maps/googlePlaces';
 
 export async function GET(
   _request: Request,
@@ -38,7 +39,7 @@ export async function GET(
       return new NextResponse('No photo available', { status: 404 });
     }
 
-    const apiKey = process.env.GOOGLE_PLACES_API_KEY;
+    const apiKey = getGooglePlacesApiKey();
     if (!apiKey) {
       return new NextResponse('Server configuration error', { status: 500 });
     }

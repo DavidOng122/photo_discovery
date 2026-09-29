@@ -37,6 +37,10 @@ interface NewPlacesSearchResponse {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
+export function getGooglePlacesApiKey(): string | undefined {
+  return process.env.GOOGLE_PLACES_API_KEY ?? process.env.GOOGLE_API_KEY;
+}
+
 function normalizeName(name: string): string {
   return name.replace(/\s+/g, '').toLowerCase();
 }
@@ -52,7 +56,7 @@ function isNameMatch(requestedName: string, googleName: string): boolean {
 export async function enrichPlaceResultsWithGooglePlaces(
   result: RecommendationOutput
 ): Promise<EnrichedRecommendationOutput> {
-  const apiKey = process.env.GOOGLE_PLACES_API_KEY;
+  const apiKey = getGooglePlacesApiKey();
 
   // Explicit test-only mock — never triggers in real dev/prod
   if (!apiKey) {
