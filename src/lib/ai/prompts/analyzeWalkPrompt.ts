@@ -1,77 +1,50 @@
 export const getAnalyzeWalkPrompt = (photoCount: number, location?: string | null) => {
   return `
-You analyze a set of photos from one walking experience.
-Your task is to detect transferable characteristics, not objects or place categories.
-Treat all uploaded photos as one experience.
+あなたは写真から街歩きの「新しい視点・発見（Discovery Phrase）」を見つけ出すAIです。
+アップロードされた${photoCount}枚の写真を1つの体験として観察し、写真に潜む魅力的な視点を抽出してください。
 
-Focus on:
-- culture
-- visual/style characteristics
-- atmosphere
+【重要な要件】
+1. 生成件数:
+   必ず「2〜3個」の視点（discoveries）を生成してください。多すぎず少なすぎず、厳選した2〜3個に絞り込んでください。
 
-Do not simply identify objects, facilities, or place categories such as:
-カフェ, 神社, 建物, 道路, 海, 店, 港
+2. 視点の質（Discovery Phrase）:
+   - 単なる被写体名や場所のカテゴリ（例: 神社, 木, 建物, 道路, カフェ, 車, 海）は絶対に避けてください。
+   - 見た人の好奇心を刺激する「新しい視点」「気づき」「魅力の言語化」にしてください。
+   - 別の街や場所でもその感覚や視点を追体験・発見できるような表現にしてください。
 
-Good feature examples:
-異国文化が混ざる街
-生活感のある路地
-昭和レトロ
-港と暮らしが近い
-静かな住宅街
-古い建物を活かした空間
-西洋建築
-門前町文化
+【良い例 (Prefer)】:
+- 歴史と暮らしが共存する街
+- 自然を取り込む建築
+- 異文化が混ざる日常風景
+- 静寂と光が交差する路地
+- 伝統的な日本建築と庭園の調和
 
-Generate concise Japanese features.
-Each feature should:
-- be supported by visible evidence in the photo set
-- be specific enough to feel meaningful
-- be transferable to another real-world place
-- help a later recommendation model find a different place with a similar appeal
-- avoid duplication with other features
+【悪い例 (Avoid)】:
+- 神社
+- 木
+- 建物
+- 道路
+- カフェ巡り
 
-Do not guess exact historical or cultural claims without evidence from the photos.
-${location ? `The user provided this location context: "${location}". You may use it as context.` : 'Leave geographic inference out of the output.'}
+3. 説明文 (explanation):
+   その視点を写真からなぜ感じたのか、どのような風景や空気感から見出せるのかを1文（簡潔かつ分かりやすく）で添えてください。
+${location ? `ユーザー提供の位置情報: "${location}"` : ''}
 
-Also generate one concise Japanese title for the walk.
-All user-facing output must be Japanese.
-
-If one photo:
-normally return 1–3 meaningful features.
-
-If multiple photos:
-identify cross-photo patterns.
-normally return 3–5 features.
-
-Never invent features only to satisfy quantity.
-Return exactly 3–5 features when the photos support them.
-
-Return ONLY one JSON object.
-
-Every item inside "tags" MUST be an object with exactly:
-- label
-- type
-- reason
-
-Allowed type values exactly match: ["culture", "style", "atmosphere"].
-
-Example format:
+必ず以下のJSON形式のみを出力してください（discoveriesキーを持つJSONオブジェクトのみ）:
 \`\`\`json
 {
-  "title": "異国文化が混ざる港町の日常",
-  "tags": [
+  "discoveries": [
     {
-      "label": "異国文化が混ざる街",
-      "type": "culture",
-      "reason": "複数の写真で英語表記や海外文化を感じる店舗表現が繰り返し確認できるため"
+      "phrase": "伝統的な日本建築と庭園の調和",
+      "explanation": "建築と自然が一体となった静かな空間"
     },
     {
-      "label": "生活感のある路地",
-      "type": "atmosphere",
-      "reason": "住宅と商業空間が密接に混ざる日常的な景観が繰り返し見られるため"
+      "phrase": "日常に溶け込む異文化の風景",
+      "explanation": "街の中に異なる文化要素が自然に共存している"
     }
   ]
 }
 \`\`\`
 `;
-}
+};
+

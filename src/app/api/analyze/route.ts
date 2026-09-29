@@ -28,11 +28,22 @@ export async function POST(request: Request) {
       outputLanguage: "ja",
     });
 
+    const discoveries = (result.data.discoveries && result.data.discoveries.length > 0)
+      ? result.data.discoveries.map((d) => ({
+          phrase: d.phrase,
+          explanation: d.explanation,
+        }))
+      : result.data.tags.map((tag) => ({
+          phrase: tag.label,
+          explanation: tag.reason,
+        }));
+
     return NextResponse.json({
-      features: result.data.tags.map((tag) => ({
-        label: tag.label,
-        type: tag.type,
-        reason: tag.reason,
+      discoveries,
+      features: discoveries.map((d) => ({
+        label: d.phrase,
+        type: "style" as const,
+        reason: d.explanation,
       })),
     });
   } catch (error: unknown) {

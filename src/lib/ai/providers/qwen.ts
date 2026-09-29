@@ -65,17 +65,44 @@ export class QwenProvider implements AIProvider {
 
     try {
       const parsedJson = JSON.parse(messageContent);
-      const rawTags = Array.isArray(parsedJson.tags)
+      let rawDiscoveries: Array<Record<string, unknown>> = Array.isArray(parsedJson.discoveries)
+        ? parsedJson.discoveries
+        : [];
+      let rawTags: Array<Record<string, unknown>> = Array.isArray(parsedJson.tags)
         ? parsedJson.tags
         : Array.isArray(parsedJson.features)
           ? parsedJson.features
           : [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      parsedJson.tags = rawTags.map((tag: any) => ({
-        label: tag.label,
-        type: normalizeFeatureType(tag.type ?? tag.category),
-        reason: tag.reason,
+
+      if (rawDiscoveries.length === 0 && rawTags.length > 0) {
+        rawDiscoveries = rawTags.map((t) => ({
+          phrase: String(t.label ?? ""),
+          explanation: String(t.reason ?? ""),
+        }));
+      }
+
+      if (rawTags.length === 0 && rawDiscoveries.length > 0) {
+        rawTags = rawDiscoveries.map((d) => ({
+          label: String(d.phrase ?? ""),
+          type: "style",
+          reason: String(d.explanation ?? ""),
+        }));
+      }
+
+      parsedJson.discoveries = rawDiscoveries.map((d) => ({
+        phrase: String(d.phrase ?? d.label ?? "").trim(),
+        explanation: String(d.explanation ?? d.reason ?? "").trim(),
       }));
+
+      parsedJson.tags = rawTags.map((tag) => ({
+        label: String(tag.label ?? ""),
+        type: normalizeFeatureType(typeof tag.type === "string" ? tag.type : typeof tag.category === "string" ? tag.category : undefined),
+        reason: String(tag.reason ?? ""),
+      }));
+
+      if (!parsedJson.title) {
+        parsedJson.title = parsedJson.discoveries[0]?.phrase || "街歩きの発見";
+      }
 
       logger.info('Qwen analyze response parsed');
       return AnalyzeWalkOutputSchema.parse(parsedJson);
@@ -109,27 +136,16 @@ export class QwenProvider implements AIProvider {
     try {
       const parsedJson = JSON.parse(messageContent);
       const selectedLabels = (
-        input.selectedFeatures?.map((feature) => feature.label)
-        ?? input.selectedTags?.map((tag) => tag.label)
-        ?? []
+        (input.selectedDiscovery?.phrase ? [input.selectedDiscovery.phrase] : [])
+        .concat(input.selectedFeatures?.map((feature) => feature.label) ?? [])
+        .concat(input.selectedTags?.map((tag) => tag.label) ?? [])
       );
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const normalizedPlaces = (parsedJson.places ?? []).map((place: any) => {
-        const rawMatchedFeatures = Array.isArray(place.matchedFeatures)
-          ? place.matchedFeatures
-          : Array.isArray(place.matchedTags)
-            ? place.matchedTags
-            : [];
-        const matchedFeatures = rawMatchedFeatures
-          .map((value: unknown) => String(value))
-          .filter((label: string) => selectedLabels.includes(label));
-
         return {
           ...place,
-          matchedFeatures: matchedFeatures.length > 0
-            ? matchedFeatures.slice(0, 3)
-            : selectedLabels.slice(0, 3),
-          type: String(place.type ?? '').toLowerCase() === 'area' ? 'area' : 'place',
+          matchedFeatures: selectedLabels.length > 0 ? selectedLabels.slice(0, 3) : [place.name],
+          type: "place",
           reason: place.reason ?? place.description ?? "",
         };
       });

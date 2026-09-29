@@ -8,23 +8,33 @@ import { ThemeSelectionScreen } from '@/components/discovery/ThemeSelectionScree
 import { ThemeRecommendationLoading } from '@/components/recommendation/ThemeRecommendationLoading';
 import styles from './MinimalHome.module.css';
 
-type FlowStep = 'upload' | 'analyzing' | 'feature-selection' | 'recommending' | 'results';
+type FlowStep = 'upload' | 'analyzing' | 'perspective-selection' | 'recommending' | 'results';
 
-type FeatureItem = {
+interface DiscoveryItem {
   id: string;
-  label: string;
-  type: 'culture' | 'style' | 'atmosphere';
+  phrase: string;
+  explanation: string;
+}
+
+interface RecommendedPlace {
+  name: string;
+  area: string | null;
+  type: string;
   reason: string;
-  category?: string;
-};
+  matchedFeatures: string[];
+  googleMapsUrl: string;
+  imageUrl?: string | null;
+  googlePlaceId?: string | null;
+  formattedAddress?: string | null;
+}
 
 export function MinimalHome() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [step, setStep] = useState<FlowStep>('upload');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [features, setFeatures] = useState<FeatureItem[]>([]);
-  const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(new Set());
-  const [recommendations, setRecommendations] = useState<Array<{ name: string; area: string | null; reason: string; matchedFeatures: string[]; googleMapsUrl: string; imageUrl?: string | null; googlePlaceId?: string | null; formattedAddress?: string | null; }>>([]);
+  const [discoveries, setDiscoveries] = useState<DiscoveryItem[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [recommendations, setRecommendations] = useState<RecommendedPlace[]>([]);
   const [error, setError] = useState<string>('');
 
   const closeSheet = useCallback(() => setIsSheetOpen(false), []);
@@ -32,6 +42,11 @@ export function MinimalHome() {
   const previewUrls = useMemo(
     () => selectedFiles.slice(0, 10).map((file) => URL.createObjectURL(file)),
     [selectedFiles]
+  );
+
+  const selectedDiscovery = useMemo(
+    () => discoveries.find((d) => d.id === selectedId) ?? null,
+    [discoveries, selectedId]
   );
 
   const handleFilesSelected = async (files: FileList | null) => {
@@ -59,18 +74,22 @@ export function MinimalHome() {
         throw new Error(data?.error?.message || '写真の分析に失敗しました。');
       }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const normalized = (data.features ?? []).map((feature: any, index: number) => ({
-        id: `${feature.label}-${index}`,
-        label: feature.label,
-        type: feature.type ?? 'style',
-        reason: feature.reason ?? '',
-        category: feature.type ?? 'style',
+      const rawList: Array<Record<string, unknown>> =
+        Array.isArray(data.discoveries) && data.discoveries.length > 0
+          ? data.discoveries
+          : Array.isArray(data.features)
+            ? data.features
+            : [];
+
+      const normalized: DiscoveryItem[] = rawList.map((item, index) => ({
+        id: `discovery-${index}`,
+        phrase: String(item.phrase ?? item.label ?? '写真の発見'),
+        explanation: String(item.explanation ?? item.reason ?? ''),
       }));
 
-      setFeatures(normalized);
-      setSelectedIds(new Set());
-      setStep('feature-selection');
+      setDiscoveries(normalized);
+      setSelectedId(null);
+      setStep('perspective-selection');
     } catch (err: unknown) {
       console.error(err);
       setError(err instanceof Error ? err.message : '写真の分析に失敗しました。');
@@ -78,15 +97,12 @@ export function MinimalHome() {
     }
   };
 
-  const handleToggleFeature = (id: string) => {
-    setSelectedIds((current) => {
-      return current.has(id) ? new Set() : new Set([id]);
-    });
+  const handleToggleDiscovery = (id: string) => {
+    setSelectedId((current) => (current === id ? null : id));
   };
 
   const handleRecommend = async () => {
-    const selected = features.filter((feature) => selectedIds.has(feature.id));
-    if (selected.length < 1 || selected.length > 3) return;
+    if (!selectedDiscovery) return;
 
     setStep('recommending');
     setError('');
@@ -96,13 +112,11 @@ export function MinimalHome() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          selectedFeatures: selected.map((feature) => ({
-            label: feature.label,
-            type: feature.type,
-            reason: feature.reason,
-          })),
+          discovery: {
+            phrase: selectedDiscovery.phrase,
+            explanation: selectedDiscovery.explanation,
+          },
           currentCity: 'Tokyo',
-          originalArea: 'Yokosuka',
         }),
       });
 
@@ -116,15 +130,15 @@ export function MinimalHome() {
     } catch (err: unknown) {
       console.error(err);
       setError(err instanceof Error ? err.message : 'おすすめの生成に失敗しました。');
-      setStep('feature-selection');
+      setStep('perspective-selection');
     }
   };
 
   const resetFlow = () => {
     setStep('upload');
     setSelectedFiles([]);
-    setFeatures([]);
-    setSelectedIds(new Set());
+    setDiscoveries([]);
+    setSelectedId(null);
     setRecommendations([]);
     setError('');
   };
@@ -168,16 +182,15 @@ export function MinimalHome() {
         <AnalysisLoadingScreen photoUrls={previewUrls} />
       )}
 
-      {step === 'feature-selection' && (
+      {step === 'perspective-selection' && (
         <ThemeSelectionScreen
-          tags={features.map((feature) => ({
-            id: feature.id,
-            label: feature.label,
-            category: feature.category ?? feature.type,
-            reason: feature.reason,
+          tags={discoveries.map((d) => ({
+            id: d.id,
+            label: d.phrase,
+            reason: d.explanation,
           }))}
-          selectedId={selectedIds.size > 0 ? Array.from(selectedIds)[0] : null}
-          onSelect={handleToggleFeature}
+          selectedId={selectedId}
+          onSelect={handleToggleDiscovery}
           onBack={resetFlow}
           onNext={handleRecommend}
           isSubmitting={false}
@@ -186,36 +199,74 @@ export function MinimalHome() {
       )}
 
       {step === 'recommending' && (
-        <ThemeRecommendationLoading tags={features.filter((feature) => selectedIds.has(feature.id)).map((feature) => ({ label: feature.label, category: feature.type }))} />
+        <ThemeRecommendationLoading tags={[{ label: selectedDiscovery?.phrase ?? '選んだ視点' }]} />
       )}
 
       {step === 'results' && (
-        <section style={{ padding: '2rem 1rem', maxWidth: '1100px', margin: '0 auto' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+        <section style={{ padding: '2rem 1.25rem', maxWidth: '1100px', margin: '0 auto', minHeight: '100vh' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', marginBottom: '1.75rem' }}>
             <div>
-              <p style={{ color: 'var(--muted)', margin: 0 }}>この特徴を持つ場所を見つけました</p>
-              <h1 style={{ margin: '0.5rem 0 0', fontSize: '1.8rem' }}>おすすめの場所</h1>
+              {selectedDiscovery && (
+                <p style={{ color: '#236887', background: '#e8f4fb', display: 'inline-block', padding: '0.3rem 0.8rem', borderRadius: '999px', fontSize: '0.85rem', fontWeight: 600, margin: '0 0 0.5rem' }}>
+                  視点: {selectedDiscovery.phrase}
+                </p>
+              )}
+              <h1 style={{ margin: '0.25rem 0 0', fontSize: '1.75rem', fontWeight: 700, color: '#111827' }}>おすすめの場所</h1>
             </div>
-            <button type="button" onClick={resetFlow} style={{ borderRadius: '999px', border: '1px solid #d1d5db', background: '#fff', padding: '0.75rem 1rem', cursor: 'pointer' }}>
+            <button
+              type="button"
+              onClick={resetFlow}
+              style={{
+                borderRadius: '999px',
+                border: '1px solid #d1d5db',
+                background: '#fff',
+                padding: '0.6rem 1.1rem',
+                fontSize: '0.875rem',
+                fontWeight: 500,
+                color: '#374151',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap'
+              }}
+            >
               もう一度
             </button>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.25rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
             {recommendations.map((place) => (
-              <article key={`${place.name}-${place.area ?? 'no-area'}`} style={{ background: '#fff', borderRadius: '18px', overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.06)', border: '1px solid #ececec' }}>
+              <article key={`${place.name}-${place.area ?? 'tokyo'}`} style={{ background: '#fff', borderRadius: '20px', overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,0.06)', border: '1px solid #ececec', display: 'flex', flexDirection: 'column' }}>
                 {place.imageUrl && (
                   <div style={{ height: '180px', backgroundImage: `url(${place.imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
                 )}
-                <div style={{ padding: '1rem' }}>
-                  <div style={{ fontWeight: 700, fontSize: '1.25rem', marginBottom: '0.5rem' }}>{place.name}</div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '0.75rem' }}>
-                    {place.matchedFeatures.map((feature) => (
-                      <span key={feature} style={{ background: '#f3f4f6', color: '#111827', borderRadius: '999px', padding: '0.3rem 0.6rem', fontSize: '0.75rem' }}>#{feature}</span>
-                    ))}
+                <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', flex: 1 }}>
+                  <div style={{ fontWeight: 700, fontSize: '1.3rem', color: '#111827', marginBottom: '0.25rem' }}>
+                    {place.name}
                   </div>
-                  <p style={{ color: '#374151', lineHeight: 1.7, margin: '0 0 1rem' }}>{place.reason}</p>
-                  <a href={place.googleMapsUrl} target="_blank" rel="noreferrer" style={{ display: 'inline-block', textDecoration: 'none', background: '#111827', color: '#fff', borderRadius: '999px', padding: '0.75rem 1rem', fontWeight: 600 }}>
+                  {place.area && (
+                    <div style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '0.75rem' }}>
+                      {place.area}
+                    </div>
+                  )}
+                  <p style={{ color: '#4b5563', lineHeight: 1.7, fontSize: '0.95rem', margin: '0 0 1.25rem', flex: 1 }}>
+                    {place.reason}
+                  </p>
+                  <a
+                    href={place.googleMapsUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      display: 'block',
+                      textAlign: 'center',
+                      textDecoration: 'none',
+                      background: '#111827',
+                      color: '#fff',
+                      borderRadius: '999px',
+                      padding: '0.8rem 1rem',
+                      fontWeight: 600,
+                      fontSize: '0.9rem',
+                      transition: 'background-color 150ms ease',
+                    }}
+                  >
                     Google Mapsで開く
                   </a>
                 </div>
@@ -225,9 +276,10 @@ export function MinimalHome() {
         </section>
       )}
 
-      {error && step !== 'feature-selection' && step !== 'results' && (
+      {error && step !== 'perspective-selection' && step !== 'results' && (
         <div style={{ marginTop: '1rem', color: '#b91c1c', textAlign: 'center' }}>{error}</div>
       )}
     </section>
   );
 }
+

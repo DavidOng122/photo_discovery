@@ -17,19 +17,28 @@ export async function analyzeWalk(input: AnalyzeWalkInput): Promise<{ data: Anal
         throw new Error("Title cannot be empty");
       }
       
+      const genericLabels = ["建物", "道路", "食べ物", "花", "車", "店", "人", "神社", "木"];
+
       const labels = new Set<string>();
-      for (const tag of result.tags) {
-        if (labels.has(tag.label)) {
-          throw new Error(`Duplicate tag label detected: ${tag.label}`);
+      if (result.discoveries && result.discoveries.length > 0) {
+        for (const discovery of result.discoveries) {
+          if (labels.has(discovery.phrase)) {
+            throw new Error(`Duplicate discovery phrase detected: ${discovery.phrase}`);
+          }
+          labels.add(discovery.phrase);
+          if (genericLabels.includes(discovery.phrase)) {
+            throw new Error(`Generic label detected in discovery: ${discovery.phrase}`);
+          }
         }
-        labels.add(tag.label);
-      }
-      
-      // Basic generic label guard
-      const genericLabels = ["建物", "道路", "食べ物", "花", "車", "店", "人"];
-      for (const tag of result.tags) {
-        if (genericLabels.includes(tag.label)) {
-          throw new Error(`Generic tag label detected: ${tag.label}`);
+      } else {
+        for (const tag of result.tags) {
+          if (labels.has(tag.label)) {
+            throw new Error(`Duplicate tag label detected: ${tag.label}`);
+          }
+          labels.add(tag.label);
+          if (genericLabels.includes(tag.label)) {
+            throw new Error(`Generic tag label detected: ${tag.label}`);
+          }
         }
       }
       

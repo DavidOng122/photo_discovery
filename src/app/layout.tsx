@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { AppShell } from '@/components/common/AppShell';
-import { AnonymousAuthProvider } from '@/components/auth/AnonymousAuthProvider';
 
 export const metadata: Metadata = {
   title: 'Photo Discovery',
@@ -16,12 +15,11 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <body>
-        <AnonymousAuthProvider>
-          <AppShell>
-            {children}
-          </AppShell>
-        </AnonymousAuthProvider>
+        <AppShell>
+          {children}
+        </AppShell>
       </body>
     </html>
   );
 }
+

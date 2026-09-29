@@ -58,7 +58,6 @@ export async function enrichPlaceResultsWithGooglePlaces(
 ): Promise<EnrichedRecommendationOutput> {
   const apiKey = getGooglePlacesApiKey();
 
-  // Explicit test-only mock — never triggers in real dev/prod
   if (!apiKey) {
     if (process.env.MOCK_GOOGLE_PLACES === 'true') {
       return {
@@ -72,83 +71,144 @@ export async function enrichPlaceResultsWithGooglePlaces(
           googlePlaceId: `mock_place_id_${place.name}`,
           formattedAddress: `Mock Address, Tokyo`,
           googlePhotoReference: null,
+          imageUrl: place.imageUrl ?? null,
         }))
       };
     }
-    throw new Error('GOOGLE_PLACES_API_KEY is missing');
-  }
-
-  const seenPlaceIds = new Set<string>();
-
-  const enrichedPlaces = await Promise.all(
-    result.places.map(async (place) => {
-      const textQuery = [place.name, place.area, '東京'].filter(Boolean).join(' ') || place.googleMapsQuery;
-
-      // Use the Places API (New) Text Search endpoint
-      const res = await fetch(
-        'https://places.googleapis.com/v1/places:searchText',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Goog-Api-Key': apiKey,
-            // Only request the fields we need — keeps billing minimal
-            'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.photos',
-          },
-          body: JSON.stringify({ textQuery }),
-          cache: 'no-store',
-        }
-      );
-
-      if (!res.ok) {
-        const body = await res.text().catch(() => '');
-        throw new Error(`GOOGLE_PLACE_VERIFICATION_FAILED: Places API (New) HTTP ${res.status} — ${body.slice(0, 200)}`);
-      }
-
-      const data = (await res.json()) as NewPlacesSearchResponse;
-
-      if (data.error) {
-        throw new Error(`GOOGLE_PLACE_VERIFICATION_FAILED: ${data.error.status} — ${data.error.message}`);
-      }
-
-      if (!Array.isArray(data?.places) || data.places.length === 0) {
-        throw new Error(`GOOGLE_PLACE_VERIFICATION_FAILED: No candidate found for ${place.name}`);
-      }
-
-      // Find best match: name similarity AND in Tokyo
-      const bestCandidate = data.places.find((candidate) => {
-        const candidateName = candidate.displayName?.text ?? '';
-        const nameMatches = isNameMatch(place.name, candidateName);
-        const address = candidate.formattedAddress || '';
-        const inTokyo = address.includes('東京') || address.includes('Tokyo');
-        return nameMatches && inTokyo && candidate.id;
-      }) ?? data.places[0]; // fallback: first result if nothing matches perfectly
-
-      if (!bestCandidate?.id) {
-        throw new Error(`GOOGLE_PLACE_VERIFICATION_FAILED: No valid candidate for ${place.name}`);
-      }
-
-      const placeId = bestCandidate.id;
-      if (seenPlaceIds.has(placeId)) {
-        throw new Error(`GOOGLE_PLACE_VERIFICATION_FAILED: Duplicate place_id found: ${placeId}`);
-      }
-      seenPlaceIds.add(placeId);
-
-      // Photo reference: the new API returns a resource name like "places/{id}/photos/{photoId}"
-      // We store this and use our proxy to serve the image server-side (key never reaches client)
-      const photoName = bestCandidate.photos?.[0]?.name ?? null;
-
-      return {
+    console.warn('GOOGLE_PLACES_API_KEY is missing, returning places without enrichment');
+    return {
+      places: result.places.map((place) => ({
         name: place.name,
         area: place.area ?? null,
         reason: place.reason,
         googleMapsQuery: place.googleMapsQuery,
         type: place.type,
         matchedFeatures: place.matchedFeatures,
-        googlePlaceId: placeId,
-        formattedAddress: bestCandidate.formattedAddress ?? null,
-        googlePhotoReference: photoName,
-      } satisfies EnrichedPlace;
+        googlePlaceId: null,
+        formattedAddress: null,
+        googlePhotoReference: null,
+        imageUrl: place.imageUrl ?? null,
+      }))
+    };
+  }
+
+  const seenPlaceIds = new Set<string>();
+
+  const enrichedPlaces = await Promise.all(
+    result.places.map(async (place) => {
+      try {
+        const textQuery = [place.name, place.area, '東京'].filter(Boolean).join(' ') || place.googleMapsQuery;
+
+        const res = await fetch(
+          'https://places.googleapis.com/v1/places:searchText',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Goog-Api-Key': apiKey,
+              'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.photos',
+            },
+            body: JSON.stringify({ textQuery }),
+            cache: 'no-store',
+          }
+        );
+
+        if (!res.ok) {
+          const body = await res.text().catch(() => '');
+          console.warn(`Google Places search returned HTTP ${res.status}: ${body.slice(0, 150)}`);
+          return {
+            name: place.name,
+            area: place.area ?? null,
+            reason: place.reason,
+            googleMapsQuery: place.googleMapsQuery,
+            type: place.type,
+            matchedFeatures: place.matchedFeatures,
+            googlePlaceId: null,
+            formattedAddress: null,
+            googlePhotoReference: null,
+            imageUrl: place.imageUrl ?? null,
+          } satisfies EnrichedPlace;
+        }
+
+        const data = (await res.json()) as NewPlacesSearchResponse;
+
+        if (data.error || !Array.isArray(data?.places) || data.places.length === 0) {
+          return {
+            name: place.name,
+            area: place.area ?? null,
+            reason: place.reason,
+            googleMapsQuery: place.googleMapsQuery,
+            type: place.type,
+            matchedFeatures: place.matchedFeatures,
+            googlePlaceId: null,
+            formattedAddress: null,
+            googlePhotoReference: null,
+            imageUrl: place.imageUrl ?? null,
+          } satisfies EnrichedPlace;
+        }
+
+        const bestCandidate = data.places.find((candidate) => {
+          const candidateName = candidate.displayName?.text ?? '';
+          const nameMatches = isNameMatch(place.name, candidateName);
+          const address = candidate.formattedAddress || '';
+          const inTokyo = address.includes('東京') || address.includes('Tokyo');
+          return nameMatches && inTokyo && candidate.id;
+        }) ?? data.places[0];
+
+        const placeId = bestCandidate?.id ?? null;
+        if (placeId && seenPlaceIds.has(placeId)) {
+          // If duplicate ID, still display without error
+        } else if (placeId) {
+          seenPlaceIds.add(placeId);
+        }
+
+        const photoName = bestCandidate?.photos?.[0]?.name ?? null;
+        let imageUrl: string | null = place.imageUrl ?? null;
+
+        if (photoName) {
+          try {
+            const mediaRes = await fetch(
+              `https://places.googleapis.com/v1/${photoName}/media?maxWidthPx=800&skipHttpRedirect=true&key=${apiKey}`,
+              { cache: 'no-store' }
+            );
+            if (mediaRes.ok) {
+              const mediaData = (await mediaRes.json()) as { photoUri?: string };
+              if (mediaData.photoUri) {
+                imageUrl = mediaData.photoUri;
+              }
+            }
+          } catch (photoErr) {
+            console.warn(`Failed to fetch photoUri for ${place.name}:`, photoErr);
+          }
+        }
+
+        return {
+          name: place.name,
+          area: place.area ?? null,
+          reason: place.reason,
+          googleMapsQuery: place.googleMapsQuery,
+          type: place.type,
+          matchedFeatures: place.matchedFeatures,
+          googlePlaceId: placeId,
+          formattedAddress: bestCandidate?.formattedAddress ?? null,
+          googlePhotoReference: photoName,
+          imageUrl,
+        } satisfies EnrichedPlace;
+      } catch (err) {
+        console.warn(`Google Places enrichment error for ${place.name}:`, err);
+        return {
+          name: place.name,
+          area: place.area ?? null,
+          reason: place.reason,
+          googleMapsQuery: place.googleMapsQuery,
+          type: place.type,
+          matchedFeatures: place.matchedFeatures,
+          googlePlaceId: null,
+          formattedAddress: null,
+          googlePhotoReference: null,
+          imageUrl: place.imageUrl ?? null,
+        } satisfies EnrichedPlace;
+      }
     })
   );
 

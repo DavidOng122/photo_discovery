@@ -6,9 +6,10 @@ import styles from './ThemeSelectionScreen.module.css';
 export interface ThemeTag {
   id: string;
   label: string;
-  category: string;
-  reason: string;
+  category?: string;
+  reason?: string;
 }
+
 
 interface ThemeSelectionScreenProps {
   tags: ThemeTag[];

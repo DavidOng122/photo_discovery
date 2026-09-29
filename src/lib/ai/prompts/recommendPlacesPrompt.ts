@@ -1,73 +1,70 @@
 import { GenerateRecommendationsInput } from "../provider";
 
 export function getRecommendPlacesPrompt(input: GenerateRecommendationsInput): string {
-  const selectedFeatures =
-    input.selectedFeatures && input.selectedFeatures.length > 0
-      ? input.selectedFeatures
-      : (input.selectedTags ?? []).map((tag) => ({
-          label: tag.label,
-          type: (tag.category === "Culture" || tag.category === "Architecture" || tag.category === "History" || tag.category === "Nature" || tag.category === "Local Life")
-            ? (tag.category === "Culture" ? "culture" : tag.category === "Architecture" ? "style" : tag.category === "History" ? "culture" : tag.category === "Nature" ? "atmosphere" : "atmosphere")
-            : "style",
-          reason: tag.reason,
-        }));
-
-  const featureSummary = selectedFeatures
-    .map((feature) => `- ${feature.label}（${feature.type}）: ${feature.reason}`)
-    .join("\n");
-
-  const excludedList =
-    (input.excludedPlaceNames ?? []).length > 0
-      ? `以下の場所は除外してください（すでに推薦済みまたは保存済み）:\n${(input.excludedPlaceNames ?? []).map((n) => `- ${n}`).join("\n")}`
-      : "";
+  let selectedPerspective = "";
+  if (input.selectedDiscovery?.phrase) {
+    selectedPerspective = input.selectedDiscovery.phrase;
+    if (input.selectedDiscovery.explanation) {
+      selectedPerspective += `（${input.selectedDiscovery.explanation}）`;
+    }
+  } else if (input.selectedFeatures && input.selectedFeatures.length > 0) {
+    selectedPerspective = input.selectedFeatures.map((f) => f.label).join(" / ");
+  } else if (input.selectedTags && input.selectedTags.length > 0) {
+    selectedPerspective = input.selectedTags.map((t) => t.label).join(" / ");
+  } else {
+    selectedPerspective = "東京の独自の魅力・視点";
+  }
 
   const currentCity = input.currentCity ?? "Tokyo";
-  const originalArea = input.originalLocation ?? "unknown";
-  const selectedFeatureLabels = selectedFeatures.map((feature) => `- ${feature.label}`).join("\n");
+  const excludedList =
+    (input.excludedPlaceNames ?? []).length > 0
+      ? `以下の場所は除外してください:\n${(input.excludedPlaceNames ?? []).map((n) => `- ${n}`).join("\n")}`
+      : "";
 
-  return `あなたは街歩きの特徴から新しい場所を探すアシスタントです。
+  return `あなたは写真から見つかった「視点・魅力」に基づいて、東京でその視点をさらに体験できる実在の場所を推薦する専門キュレーターです。
 
-今回のユーザーが選んだ特徴:
-${featureSummary}
+ユーザーが写真から発見・選択した視点:
+「${selectedPerspective}」
 
-現在の都市: ${currentCity}
-元の場所/エリア: ${originalArea}
+推薦対象エリア: ${currentCity}
 
-【重要なルール】
-- 推薦は必ず ${currentCity} の中から行ってください。
-- 元の場所 ${originalArea} またはその明らかな近隣エリアは避けてください。
-- 似た外見だけでなく、選ばれた特徴が共有される場所を推薦してください。
-- 実在する場所のみ推薦してください。
-- 3つだけ返してください。
-- type は必ず英語の "area" または "place" のどちらかにしてください。
-- neighborhood / area / shopping street / district / shrine / museum / cafe / park / historic district のような実在の場所を含めてください。
-- その場所が「なぜこの特徴に合うか」を日本語でわかりやすく説明してください。
-- 説明文は 1〜2 文で簡潔にしてください。
-- googleMapsQuery は 「場所名 エリア名 ${currentCity}」 の形式にしてください。
-- matchedFeatures には選択した特徴名をそのまま使用してください。
-- imageUrl は Google Places の画像があれば設定し、なければ null にしてください。
-- sourceUrl / sourceDomain は使わないでください。
-- 元のエリアと重なる候補より、違うエリアで同じ感覚を持つ場所を優先してください。
-
-選択済み特徴ラベル:
-${selectedFeatureLabels}
+【重要な推薦ルール】
+1. 視点の体験（最重要）:
+   - 写真と「見た目が似ている場所」を推薦しないでください。
+   - 選ばれた視点（例: 「伝統的な日本建築と庭園の調和」）を、東京の街歩きの中で実際に体験・味わえる場所を推薦してください。
+2. 実在する場所:
+   - 必ず東京に実在し、Google Maps で訪れることができる具体的なスポット（神社、庭園、通り、美術館、歴史ある街区、建築など）を選んでください。
+3. 推薦件数:
+   - 厳選した3箇所を推薦してください。
+4. 説明文 (reason):
+   - 写真で発見した視点をなぜその場所で体験できるのかを、簡潔で魅力的な日本語（1〜2文）で説明してください。
+   - 例: 「歴史ある建築と自然が調和した空間で、写真で発見した視点をさらに体験できます。」
+5. googleMapsQuery:
+   - 「場所名 エリア名 Tokyo」の形式にしてください（例: "根津神社 文京区 Tokyo"）。
+6. type:
+   - 必ず "place" にしてください。
+7. matchedFeatures:
+   - 選択された視点のフレーズを含めてください。
 
 ${excludedList}
 
-以下のJSON形式で出力してください（placesキーを持つオブジェクトのみ返してください）:
+必ず以下のJSON形式のみを出力してください（placesキーを持つJSONオブジェクトのみ）:
+\`\`\`json
 {
   "places": [
     {
-      "name": "福生",
-      "area": "東京都福生市",
-      "type": "area",
-      "reason": "基地周辺に異国文化が混ざる街並みが残り、選択した特徴とつながる場所です。",
-      "matchedFeatures": ["異国文化が混ざる街", "昭和レトロ"],
-      "googleMapsQuery": "福生 東京都",
+      "name": "根津神社",
+      "area": "文京区",
+      "type": "place",
+      "reason": "歴史ある建築と自然が調和した空間で、写真で発見した視点をさらに体験できます。",
+      "matchedFeatures": ["${input.selectedDiscovery?.phrase || (input.selectedFeatures?.[0]?.label ?? '選択した視点')}"],
+      "googleMapsQuery": "根津神社 文京区 Tokyo",
       "googlePlaceId": null,
       "formattedAddress": null,
       "imageUrl": null
     }
   ]
-}`;
 }
+\`\`\``;
+}
+

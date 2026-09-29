@@ -12,7 +12,10 @@ export class MockProvider implements AIProvider {
         { label: '昭和レトロの路地', type: 'style', reason: 'Showa-era alley aesthetic' },
       ],
       observations: [{ id: 'obs1', description: 'desc', type: 'style', matchedFeatures: ['f1'] }],
-      discoveries: [{ lens: 'culture', phrase: 'Mock Phrase', explanation: 'exp', observationIds: ['obs1'] }]
+      discoveries: [
+        { lens: 'culture', phrase: '伝統的な日本建築と庭園の調和', explanation: '建築と自然が一体となった静かな空間', observationIds: ['obs1'] },
+        { lens: 'style', phrase: '日常に溶け込む異文化の風景', explanation: '街の中に異なる文化要素が自然に共存している', observationIds: ['obs1'] },
+      ]
     };
   }
 

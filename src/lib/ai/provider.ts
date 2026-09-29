@@ -18,7 +18,13 @@ export interface AnalyzeWalkInput {
   outputLanguage: "ja";
 }
 
+export interface DiscoveryItem {
+  phrase: string;
+  explanation: string;
+}
+
 export interface GenerateRecommendationsInput {
+  selectedDiscovery?: DiscoveryItem;
   selectedTags?: Array<{
     label: string;
     category?: DiscoveryCategory | string;
@@ -33,6 +39,7 @@ export interface GenerateRecommendationsInput {
   excludedPlaceNames?: string[];
   outputLanguage: "ja";
 }
+
 
 export interface AIProvider {
   readonly name: string;

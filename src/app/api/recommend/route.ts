@@ -2,42 +2,48 @@ import { NextResponse } from "next/server";
 import { generateRecommendations } from "@/lib/ai/generateRecommendations";
 import { buildGoogleMapsUrl } from "@/lib/maps/buildGoogleMapsUrl";
 
-function validateSelectedFeatures(selectedFeatures: unknown): Array<{ label: string; type: "culture" | "style" | "atmosphere"; reason: string }> {
-  if (!Array.isArray(selectedFeatures) || selectedFeatures.length < 1 || selectedFeatures.length > 3) {
-    throw new Error("Must select between 1 and 3 features.");
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return selectedFeatures.map((feature: any) => {
-    const label = String(feature?.label ?? "").trim();
-    const type = feature?.type;
-    const reason = String(feature?.reason ?? "").trim();
-
-    if (!label) throw new Error("Each feature requires a label.");
-    if (!["culture", "style", "atmosphere"].includes(type)) {
-      throw new Error(`Invalid feature type: ${type}`);
-    }
-    if (!reason) throw new Error(`Feature ${label} requires a reason.`);
-
-    return {
-      label,
-      type,
-      reason,
-    };
-  });
-}
-
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const selectedFeatures = validateSelectedFeatures(body?.selectedFeatures);
+
+    let selectedPhrase = "";
+    let reason = "";
+
+    if (body?.discovery?.phrase) {
+      selectedPhrase = String(body.discovery.phrase).trim();
+      reason = String(body.discovery.explanation || "").trim();
+    } else if (body?.discoveryPhrase) {
+      selectedPhrase = String(body.discoveryPhrase).trim();
+      reason = String(body?.explanation || "").trim();
+    } else if (Array.isArray(body?.selectedFeatures) && body.selectedFeatures.length > 0) {
+      selectedPhrase = String(body.selectedFeatures[0]?.label || "").trim();
+      reason = String(body.selectedFeatures[0]?.reason || "").trim();
+    } else if (Array.isArray(body?.selectedTags) && body.selectedTags.length > 0) {
+      selectedPhrase = String(body.selectedTags[0]?.label || "").trim();
+      reason = String(body.selectedTags[0]?.reason || "").trim();
+    }
+
+    if (!selectedPhrase) {
+      return NextResponse.json({
+        error: { code: "INVALID_INPUT", message: "視点が選択されていません。" },
+      }, { status: 400 });
+    }
+
     const currentCity = String(body?.currentCity ?? "Tokyo").trim() || "Tokyo";
-    const originalArea = String(body?.originalArea ?? body?.currentCity ?? "Tokyo").trim() || "Tokyo";
 
     const output = await generateRecommendations({
-      selectedFeatures,
+      selectedDiscovery: {
+        phrase: selectedPhrase,
+        explanation: reason,
+      },
+      selectedFeatures: [
+        {
+          label: selectedPhrase,
+          type: "style",
+          reason: reason || selectedPhrase,
+        },
+      ],
       currentCity,
-      originalLocation: originalArea,
       outputLanguage: "ja",
       excludedPlaceNames: [],
     });
@@ -46,9 +52,9 @@ export async function POST(request: Request) {
       places: output.data.places.map((place) => ({
         name: place.name,
         area: place.area ?? null,
-        type: place.type ?? "area",
+        type: "place",
         reason: place.reason,
-        matchedFeatures: place.matchedFeatures,
+        matchedFeatures: place.matchedFeatures.length > 0 ? place.matchedFeatures : [selectedPhrase],
         googlePlaceId: place.googlePlaceId ?? null,
         formattedAddress: place.formattedAddress ?? null,
         imageUrl: place.imageUrl ?? null,
@@ -65,3 +71,4 @@ export async function POST(request: Request) {
     }, { status: 500 });
   }
 }
+

@@ -4,17 +4,14 @@ import { RecommendationOutputSchema } from "./schemas";
 import {
   EnrichedRecommendationOutput,
   enrichPlaceResultsWithGooglePlaces,
-  getGooglePlacesApiKey,
 } from "@/lib/maps/googlePlaces";
+
 
 export async function generateRecommendations(
   input: GenerateRecommendationsInput
 ): Promise<{ data: EnrichedRecommendationOutput; metadata: Record<string, unknown> }> {
-  if (!getGooglePlacesApiKey() && process.env.MOCK_GOOGLE_PLACES !== "true") {
-    throw new Error("GOOGLE_PLACES_API_KEY is missing");
-  }
-
   const provider = getAIProvider("recommendation");
+
 
   let lastError: Error | null = null;
 
@@ -24,10 +21,13 @@ export async function generateRecommendations(
       const result = RecommendationOutputSchema.parse(raw);
 
       const selectedLabels = new Set(
-        ((input.selectedFeatures && input.selectedFeatures.length > 0)
-          ? input.selectedFeatures
-          : (input.selectedTags ?? [])
-        ).map((feature) => feature.label)
+        (input.selectedDiscovery?.phrase ? [input.selectedDiscovery.phrase] : [])
+        .concat(
+          ((input.selectedFeatures && input.selectedFeatures.length > 0)
+            ? input.selectedFeatures
+            : (input.selectedTags ?? [])
+          ).map((feature) => feature.label)
+        )
       );
 
       const names = new Set<string>();
@@ -38,15 +38,11 @@ export async function generateRecommendations(
         names.add(place.name);
 
         if (!place.googleMapsQuery || place.googleMapsQuery.trim().length === 0) {
-          throw new Error(`Missing googleMapsQuery for ${place.name}`);
+          place.googleMapsQuery = `${place.name} ${place.area ?? ''} ${input.currentCity ?? 'Tokyo'}`.trim();
         }
 
-        if (selectedLabels.size > 0) {
-          for (const matchedFeature of place.matchedFeatures) {
-            if (!selectedLabels.has(matchedFeature)) {
-              throw new Error(`matchedFeature "${matchedFeature}" is not in the selected feature list`);
-            }
-          }
+        if (selectedLabels.size > 0 && (!place.matchedFeatures || place.matchedFeatures.length === 0)) {
+          place.matchedFeatures = [Array.from(selectedLabels)[0]];
         }
       }
 

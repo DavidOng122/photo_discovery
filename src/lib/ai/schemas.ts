@@ -32,20 +32,19 @@ export type Observation = z.infer<typeof ObservationSchema>;
 
 // V2 Discovery Perspective
 export const DiscoveryPerspectiveSchema = z.object({
-  lens: z.string(),
-  phrase: z.string(),
-  explanation: z.string(),
-  observationIds: z.array(z.string()),
+  phrase: z.string().min(2).max(100),
+  explanation: z.string().min(2).max(300),
+  lens: z.string().optional(),
+  observationIds: z.array(z.string()).optional(),
 });
 
 export type DiscoveryPerspective = z.infer<typeof DiscoveryPerspectiveSchema>;
 
 export const AnalyzeWalkOutputSchema = z.object({
-  title: z.string().min(2).max(80),
-  tags: z.array(DiscoveryTagOutputSchema).min(1).max(5),
-  // V2 fields (optional for backward compat with v1 providers)
+  title: z.string().min(1).max(80).optional().default("散歩の発見"),
+  tags: z.array(DiscoveryTagOutputSchema).optional().default([]),
+  discoveries: z.array(DiscoveryPerspectiveSchema).min(1).max(5).optional().default([]),
   observations: z.array(ObservationSchema).optional(),
-  discoveries: z.array(DiscoveryPerspectiveSchema).optional(),
 });
 
 export type AnalyzeWalkOutput = z.infer<typeof AnalyzeWalkOutputSchema>;
@@ -53,9 +52,9 @@ export type AnalyzeWalkOutput = z.infer<typeof AnalyzeWalkOutputSchema>;
 export const RecommendedPlaceOutputSchema = z.object({
   name: z.string().min(1).max(100),
   area: z.string().max(100).nullable().optional(),
-  type: z.enum(["area", "place"]).default("place"),
-  reason: z.string().min(20).max(220),
-  matchedFeatures: z.array(z.string().min(1)).min(1).max(3),
+  type: z.string().optional().default("place").transform(() => "place" as const),
+  reason: z.string().min(5).max(300),
+  matchedFeatures: z.array(z.string().min(1)).optional().default([]),
   googleMapsQuery: z.string().min(1).max(200),
   googlePlaceId: z.string().max(200).nullable().optional(),
   formattedAddress: z.string().max(200).nullable().optional(),
@@ -63,8 +62,9 @@ export const RecommendedPlaceOutputSchema = z.object({
 });
 
 export const RecommendationOutputSchema = z.object({
-  places: z.array(RecommendedPlaceOutputSchema).min(3).max(5),
+  places: z.array(RecommendedPlaceOutputSchema).min(1).max(5),
 });
 
 export type RecommendedPlaceOutput = z.infer<typeof RecommendedPlaceOutputSchema>;
 export type RecommendationOutput = z.infer<typeof RecommendationOutputSchema>;
+
