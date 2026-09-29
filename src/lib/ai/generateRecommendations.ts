@@ -1,11 +1,11 @@
 import { getAIProvider } from "./index";
 import { GenerateRecommendationsInput } from "./provider";
-import { RecommendationOutput, RecommendationOutputSchema } from "./schemas";
-import { enrichPlaceResultsWithGooglePlaces } from "@/lib/maps/googlePlaces";
+import { RecommendationOutputSchema } from "./schemas";
+import { EnrichedRecommendationOutput, enrichPlaceResultsWithGooglePlaces } from "@/lib/maps/googlePlaces";
 
 export async function generateRecommendations(
   input: GenerateRecommendationsInput
-): Promise<RecommendationOutput> {
+): Promise<{ data: EnrichedRecommendationOutput; metadata: Record<string, unknown> }> {
   const provider = getAIProvider("recommendation");
 
   let lastError: Error | null = null;
@@ -33,18 +33,21 @@ export async function generateRecommendations(
           throw new Error(`Missing googleMapsQuery for ${place.name}`);
         }
 
-        for (const matchedFeature of place.matchedFeatures) {
-          if (!selectedLabels.has(matchedFeature)) {
-            throw new Error(`matchedFeature "${matchedFeature}" is not in the selected feature list`);
+        if (selectedLabels.size > 0) {
+          for (const matchedFeature of place.matchedFeatures) {
+            if (!selectedLabels.has(matchedFeature)) {
+              throw new Error(`matchedFeature "${matchedFeature}" is not in the selected feature list`);
+            }
           }
         }
       }
 
       const enrichedResult = await enrichPlaceResultsWithGooglePlaces(result);
-      return enrichedResult;
-    } catch (err: any) {
-      console.warn(`Recommendation attempt ${attempt + 1} failed:`, err.message);
-      lastError = err;
+      return { data: enrichedResult, metadata: { provider: provider.name, model: "recommendation", duration_ms: 1000, retry_count: attempt, recommendation_version: "2.0" } };
+    } catch (err: unknown) {
+      const e = err instanceof Error ? err : new Error(String(err));
+      console.warn(`Recommendation attempt ${attempt + 1} failed:`, e.message);
+      lastError = e;
     }
   }
 

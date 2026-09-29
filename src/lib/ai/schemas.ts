@@ -20,9 +20,32 @@ export const DiscoveryTagOutputSchema = z.object({
   path: ["type"],
 });
 
+// V2 Observation: a grounded observation extracted from vision analysis
+export const ObservationSchema = z.object({
+  id: z.string(),
+  description: z.string(),
+  type: z.string().optional(),
+  matchedFeatures: z.array(z.string()).optional(),
+});
+
+export type Observation = z.infer<typeof ObservationSchema>;
+
+// V2 Discovery Perspective
+export const DiscoveryPerspectiveSchema = z.object({
+  lens: z.string(),
+  phrase: z.string(),
+  explanation: z.string(),
+  observationIds: z.array(z.string()),
+});
+
+export type DiscoveryPerspective = z.infer<typeof DiscoveryPerspectiveSchema>;
+
 export const AnalyzeWalkOutputSchema = z.object({
   title: z.string().min(2).max(80),
   tags: z.array(DiscoveryTagOutputSchema).min(1).max(5),
+  // V2 fields (optional for backward compat with v1 providers)
+  observations: z.array(ObservationSchema).optional(),
+  discoveries: z.array(DiscoveryPerspectiveSchema).optional(),
 });
 
 export type AnalyzeWalkOutput = z.infer<typeof AnalyzeWalkOutputSchema>;

@@ -15,8 +15,9 @@ async function testQwenText() {
       response_format: { type: 'json_object' }
     });
     console.log('Qwen Text Response:', res.choices[0]?.message?.content);
-  } catch (err: any) {
-    console.error('Qwen Text Error:', err.status, err.message);
+  } catch (err: unknown) {
+    const status = (err !== null && typeof err === 'object' && 'status' in err) ? (err as { status: unknown }).status : undefined;
+    console.error('Qwen Text Error:', status, err instanceof Error ? err.message : String(err));
   }
 }
 
@@ -40,8 +41,9 @@ async function testQwenVision() {
       response_format: { type: 'json_object' }
     });
     console.log('Qwen Vision Response:', res.choices[0]?.message?.content);
-  } catch (err: any) {
-    console.error('Qwen Vision Error:', err.status, err.message);
+  } catch (err: unknown) {
+    const status = (err !== null && typeof err === 'object' && 'status' in err) ? (err as { status: unknown }).status : undefined;
+    console.error('Qwen Vision Error:', status, err instanceof Error ? err.message : String(err));
   }
 }
 
@@ -60,8 +62,8 @@ async function testTavily() {
     const data = await res.json();
     console.log(`Tavily Results Count: ${data.results?.length}`);
     console.log(`Tavily Images Type: ${Array.isArray(data.images) ? 'Array' : typeof data.images}`);
-  } catch (err: any) {
-    console.error('Tavily Error:', err.message);
+  } catch (err: unknown) {
+    console.error('Tavily Error:', err instanceof Error ? err.message : String(err));
   }
 }
 
@@ -76,8 +78,8 @@ async function testSupabase() {
     } else {
       console.log('Supabase Walks query success. Data length:', data.length);
     }
-  } catch (err: any) {
-    console.error('Supabase Error:', err.message);
+  } catch (err: unknown) {
+    console.error('Supabase Error:', err instanceof Error ? err.message : String(err));
   }
 }
 

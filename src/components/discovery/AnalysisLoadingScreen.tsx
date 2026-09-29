@@ -1,8 +1,14 @@
 'use client';
 
 /* eslint-disable @next/next/no-img-element */
-
+import { useState, useEffect } from 'react';
 import styles from './AnalysisLoadingScreen.module.css';
+
+const MESSAGES = [
+  '写真を見ています',
+  '視点を探しています',
+  '写真の中のつながりを見つけています',
+];
 
 interface AnalysisLoadingScreenProps {
   photoUrls: string[];
@@ -24,14 +30,30 @@ function buildCardPhotos(photoUrls: string[]) {
 
 export function AnalysisLoadingScreen({ photoUrls }: AnalysisLoadingScreenProps) {
   const cards = buildCardPhotos(photoUrls);
+  const [messageIndex, setMessageIndex] = useState(0);
+  const [isDelayed, setIsDelayed] = useState(false);
+
+  useEffect(() => {
+    const cycleInterval = setInterval(() => {
+      setMessageIndex((prev) => (prev + 1) % MESSAGES.length);
+    }, 2500);
+
+    const delayTimeout = setTimeout(() => {
+      setIsDelayed(true);
+    }, 8000);
+
+    return () => {
+      clearInterval(cycleInterval);
+      clearTimeout(delayTimeout);
+    };
+  }, []);
 
   return (
     <section className={styles.screen} data-node-id="13:76" aria-live="polite" aria-busy="true">
       <div className={styles.content} data-node-id="13:81">
         <div className={styles.heading} data-node-id="13:83">
-          <h1 data-node-id="13:84">
-            <span>写真から</span>
-            <span>テーマを見つけています</span>
+          <h1 data-node-id="13:84" key={messageIndex} style={{ animation: 'fadeIn 300ms ease-in-out' }}>
+            <span>{MESSAGES[messageIndex]}</span>
           </h1>
         </div>
 
@@ -59,7 +81,9 @@ export function AnalysisLoadingScreen({ photoUrls }: AnalysisLoadingScreenProps)
           )}
         </div>
 
-        <p className={styles.waitingText} data-node-id="13:99">少しお待ちください</p>
+        <p className={styles.waitingText} data-node-id="13:99">
+          {isDelayed ? 'もう少し写真を見ています…' : '少しお待ちください'}
+        </p>
       </div>
     </section>
   );

@@ -16,6 +16,7 @@ function normalizeFeatureType(value: string | undefined): "culture" | "style" | 
 }
 
 export class QwenProvider implements AIProvider {
+  readonly name = "qwen";
   private client: OpenAI;
 
   constructor() {
@@ -34,6 +35,7 @@ export class QwenProvider implements AIProvider {
     }
     const model = process.env.QWEN_VISION_MODEL || process.env.AI_VISION_MODEL || "qwen-vl-plus";
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const content: any[] = [
       { type: "text", text: prompt }
     ];
@@ -68,6 +70,7 @@ export class QwenProvider implements AIProvider {
 
       const parsedJson = JSON.parse(messageContent);
       const rawTags = Array.isArray(parsedJson.tags) ? parsedJson.tags : Array.isArray(parsedJson.features) ? parsedJson.features : [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
       parsedJson.tags = rawTags.map((tag: any) => ({
         label: tag.label,
         type: normalizeFeatureType(tag.type ?? tag.category),
@@ -113,6 +116,7 @@ export class QwenProvider implements AIProvider {
 
     try {
       const parsedJson = JSON.parse(messageContent);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const normalizedPlaces = (parsedJson.places ?? []).map((place: any) => ({
         ...place,
         matchedFeatures: Array.isArray(place.matchedFeatures) ? place.matchedFeatures : Array.isArray(place.matchedTags) ? place.matchedTags : [],

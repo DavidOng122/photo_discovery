@@ -21,14 +21,14 @@ export async function getSavedPlaces(): Promise<SavedPlace[]> {
   if (error) throw error;
   if (!data) return [];
 
-  return data.map((row: any) => ({
+  return data.map((row) => ({
     id: row.id,
     name: row.name,
     area: row.area,
     description: row.description,
     imageUrl: row.image_url,
     googleMapsQuery: row.google_maps_query,
-    matchedTags: Array.isArray(row.matched_tags) ? row.matched_tags : [],
+    matchedTags: Array.isArray(row.matched_tags) ? (row.matched_tags as string[]) : [],
     createdAt: row.created_at,
   }));
 }

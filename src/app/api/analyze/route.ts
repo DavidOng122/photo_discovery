@@ -29,16 +29,17 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({
-      features: result.tags.map((tag) => ({
+      features: result.data.tags.map((tag) => ({
         label: tag.label,
         type: tag.type,
         reason: tag.reason,
       })),
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Analyze route error:", error);
+    const message = error instanceof Error ? error.message : "写真の分析に失敗しました。";
     return NextResponse.json({
-      error: { code: "AI_ANALYSIS_FAILED", message: error?.message || "写真の分析に失敗しました。" },
+      error: { code: "AI_ANALYSIS_FAILED", message },
     }, { status: 500 });
   }
 }

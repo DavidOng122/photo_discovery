@@ -12,8 +12,8 @@ async function run() {
     const result = await provider.analyzeWalk(input);
     console.log("SUCCESS");
     console.log(JSON.stringify(result, null, 2));
-  } catch (err: any) {
-    console.error("FAIL", err.message);
+  } catch (err: unknown) {
+    console.error("FAIL", err instanceof Error ? err.message : String(err));
   }
 }
 

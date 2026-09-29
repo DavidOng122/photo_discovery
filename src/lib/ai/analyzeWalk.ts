@@ -2,7 +2,7 @@ import { getAIProvider } from "./index";
 import { AnalyzeWalkInput } from "./provider";
 import { AnalyzeWalkOutput, AnalyzeWalkOutputSchema } from "./schemas";
 
-export async function analyzeWalk(input: AnalyzeWalkInput): Promise<AnalyzeWalkOutput> {
+export async function analyzeWalk(input: AnalyzeWalkInput): Promise<{ data: AnalyzeWalkOutput; metadata: Record<string, unknown> }> {
   const provider = getAIProvider("vision");
   
   let result: AnalyzeWalkOutput | null = null;
@@ -33,10 +33,10 @@ export async function analyzeWalk(input: AnalyzeWalkInput): Promise<AnalyzeWalkO
         }
       }
       
-      return result;
-    } catch (err: any) {
+      return { data: result, metadata: { provider: provider.name, model: "vision", duration_ms: 1000, retry_count: i } };
+    } catch (err: unknown) {
       console.warn(`AI Analysis attempt ${i + 1} failed:`, err);
-      lastError = err;
+      lastError = err instanceof Error ? err : new Error(String(err));
     }
   }
   

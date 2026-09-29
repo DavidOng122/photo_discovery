@@ -62,7 +62,7 @@ export async function getWalkDetail(walkId: string): Promise<WalkDetail | null> 
     .order('sort_order', { ascending: true });
 
   const photos: WalkPhoto[] = await Promise.all(
-    (photosData ?? []).map(async (p: any) => {
+      (photosData ?? []).map(async (p) => {
       let signedUrl: string | null = null;
       try { signedUrl = await getSignedImageUrl(p.storage_path, 3600); } catch {}
       return { id: p.id, storagePath: p.storage_path, sortOrder: p.sort_order, signedUrl };
@@ -76,8 +76,8 @@ export async function getWalkDetail(walkId: string): Promise<WalkDetail | null> 
     .eq('walk_id', walkId);
 
   const selectedTags: WalkTag[] = (tagsData ?? [])
-    .filter((t: any) => t.selected)
-    .map((t: any) => ({ id: t.id, label: t.label, category: t.category, selected: t.selected }));
+      .filter((t) => t.selected)
+      .map((t) => ({ id: t.id, label: t.label, category: t.category, selected: t.selected }));
 
   // Recommendations
   let recommendations: WalkRecommendedPlace[] = [];
@@ -95,7 +95,7 @@ export async function getWalkDetail(walkId: string): Promise<WalkDetail | null> 
         .eq('recommendation_set_id', set.id);
 
       if (places) {
-        const placeIds = places.map((p: any) => p.id);
+          const placeIds = places.map((p) => p.id);
         const { data: savedRows } = await supabase
           .from('saved_places')
           .select('id, source_recommended_place_id')
@@ -109,14 +109,14 @@ export async function getWalkDetail(walkId: string): Promise<WalkDetail | null> 
           }
         }
 
-        recommendations = places.map((p: any) => ({
+          recommendations = places.map((p) => ({
           id: p.id,
           name: p.name,
           area: p.area,
           description: p.description,
           imageUrl: p.image_url,
           googleMapsQuery: p.google_maps_query,
-          matchedTags: (p.recommended_place_tags ?? []).map((rpt: any) => rpt.discovery_tags?.label).filter(Boolean),
+            matchedTags: (p.recommended_place_tags ?? []).map((rpt) => rpt.discovery_tags?.label).filter(Boolean),
           isSaved: savedMap.has(p.id),
           savedPlaceId: savedMap.get(p.id) ?? null,
         }));

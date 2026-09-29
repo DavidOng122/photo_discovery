@@ -73,7 +73,7 @@ export async function POST(
       selectedTagIds
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Unhandled error in confirm-tags route:', error);
     return NextResponse.json({ error: { code: 'INTERNAL_ERROR', message: '選択した発見を保存できませんでした。' } }, { status: 500 });
   }

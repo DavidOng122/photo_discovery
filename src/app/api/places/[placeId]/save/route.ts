@@ -15,12 +15,13 @@ export async function POST(
 
     const result = await savePlace(placeId);
     return NextResponse.json({ savedPlaceId: result.savedPlaceId, alreadySaved: result.alreadySaved });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Save place error:', err);
-    if (err.message?.includes('not found')) {
+    const message = err instanceof Error ? err.message : '';
+    if (message.includes('not found')) {
       return NextResponse.json({ error: { code: 'NOT_FOUND', message: '場所が見つかりませんでした。' } }, { status: 404 });
     }
-    if (err.message?.includes('Access denied')) {
+    if (message.includes('Access denied')) {
       return NextResponse.json({ error: { code: 'UNAUTHORIZED', message: 'Unauthorized' } }, { status: 403 });
     }
     return NextResponse.json({ error: { code: 'SAVE_FAILED', message: '場所を保存できませんでした。もう一度お試しください。' } }, { status: 500 });

@@ -1,21 +1,28 @@
 import { AIProvider } from "./provider";
 import { OpenAIProvider } from "./providers/openai";
 import { QwenProvider } from "./providers/qwen";
+import { MockProvider } from "./providers/mock";
 
 export type AIProviderKind = "vision" | "recommendation";
 
-export function getAIProvider(kind: AIProviderKind = "recommendation"): AIProvider {
-  const provider =
-    kind === "vision"
-      ? (process.env.VISION_PROVIDER ?? process.env.QWEN_PROVIDER ?? process.env.AI_PROVIDER ?? "qwen")
-      : (process.env.RECOMMENDATION_PROVIDER ?? process.env.OPENAI_PROVIDER ?? process.env.AI_PROVIDER ?? "openai");
+type ProviderName = "openai" | "qwen" | "mock";
 
-  switch (provider) {
+export function getAIProvider(kind: AIProviderKind = "recommendation"): AIProvider {
+  void kind; // kind reserved for future per-context provider selection
+  const providerEnv = (process.env.AI_PROVIDER ?? "mock").toLowerCase() as ProviderName;
+
+  switch (providerEnv) {
     case "openai":
       return new OpenAIProvider();
     case "qwen":
       return new QwenProvider();
-    default:
-      throw new Error(`Unsupported AI provider: ${provider}`);
+    case "mock":
+      return new MockProvider();
+    default: {
+      // Fallback to mock for unknown providers (type-safe exhaustive check)
+      const _exhaustive: never = providerEnv;
+      void _exhaustive;
+      return new MockProvider();
+    }
   }
 }

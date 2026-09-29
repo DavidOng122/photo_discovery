@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5"
-  }
   graphql_public: {
     Tables: {
       [_ in never]: never
@@ -39,6 +34,65 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_request_metrics: {
+        Row: {
+          analysis_version: string
+          created_at: string
+          duration_ms: number
+          failure_code: string | null
+          id: string
+          image_tokens: number | null
+          input_tokens: number | null
+          model: string
+          output_tokens: number | null
+          provider: string
+          retry_count: number
+          stage: string
+          success: boolean
+          walk_id: string
+        }
+        Insert: {
+          analysis_version: string
+          created_at?: string
+          duration_ms: number
+          failure_code?: string | null
+          id?: string
+          image_tokens?: number | null
+          input_tokens?: number | null
+          model: string
+          output_tokens?: number | null
+          provider: string
+          retry_count?: number
+          stage: string
+          success: boolean
+          walk_id: string
+        }
+        Update: {
+          analysis_version?: string
+          created_at?: string
+          duration_ms?: number
+          failure_code?: string | null
+          id?: string
+          image_tokens?: number | null
+          input_tokens?: number | null
+          model?: string
+          output_tokens?: number | null
+          provider?: string
+          retry_count?: number
+          stage?: string
+          success?: boolean
+          walk_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_request_metrics_walk_id_fkey"
+            columns: ["walk_id"]
+            isOneToOne: false
+            referencedRelation: "walks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       discovery_tags: {
         Row: {
           category: string
@@ -85,27 +139,52 @@ export type Database = {
           ai_provider: string | null
           created_at: string
           id: string
+          input_tokens: number | null
+          output_tokens: number | null
+          recommendation_duration_ms: number | null
+          recommendation_version: string | null
+          retry_count: number | null
           search_provider: string | null
           search_query: string | null
+          selected_discovery_id: string | null
           walk_id: string
         }
         Insert: {
           ai_provider?: string | null
           created_at?: string
           id?: string
+          input_tokens?: number | null
+          output_tokens?: number | null
+          recommendation_duration_ms?: number | null
+          recommendation_version?: string | null
+          retry_count?: number | null
           search_provider?: string | null
           search_query?: string | null
+          selected_discovery_id?: string | null
           walk_id: string
         }
         Update: {
           ai_provider?: string | null
           created_at?: string
           id?: string
+          input_tokens?: number | null
+          output_tokens?: number | null
+          recommendation_duration_ms?: number | null
+          recommendation_version?: string | null
+          retry_count?: number | null
           search_provider?: string | null
           search_query?: string | null
+          selected_discovery_id?: string | null
           walk_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "recommendation_sets_selected_discovery_id_fkey"
+            columns: ["selected_discovery_id"]
+            isOneToOne: false
+            referencedRelation: "discovery_tags"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "recommendation_sets_walk_id_fkey"
             columns: ["walk_id"]
@@ -150,7 +229,10 @@ export type Database = {
           area: string | null
           created_at: string
           description: string
+          formatted_address: string | null
           google_maps_query: string
+          google_photo_reference: string | null
+          google_place_id: string | null
           id: string
           image_url: string | null
           name: string
@@ -163,7 +245,10 @@ export type Database = {
           area?: string | null
           created_at?: string
           description: string
+          formatted_address?: string | null
           google_maps_query: string
+          google_photo_reference?: string | null
+          google_place_id?: string | null
           id?: string
           image_url?: string | null
           name: string
@@ -176,7 +261,10 @@ export type Database = {
           area?: string | null
           created_at?: string
           description?: string
+          formatted_address?: string | null
           google_maps_query?: string
+          google_photo_reference?: string | null
+          google_place_id?: string | null
           id?: string
           image_url?: string | null
           name?: string
@@ -234,8 +322,64 @@ export type Database = {
         }
         Relationships: []
       }
+      walk_analyses: {
+        Row: {
+          analysis_duration_ms: number
+          analysis_version: string
+          created_at: string
+          image_tokens: number | null
+          input_tokens: number | null
+          observations: Json
+          output_tokens: number | null
+          retry_count: number
+          updated_at: string
+          vision_model: string
+          vision_provider: string
+          walk_id: string
+        }
+        Insert: {
+          analysis_duration_ms: number
+          analysis_version?: string
+          created_at?: string
+          image_tokens?: number | null
+          input_tokens?: number | null
+          observations: Json
+          output_tokens?: number | null
+          retry_count?: number
+          updated_at?: string
+          vision_model: string
+          vision_provider: string
+          walk_id: string
+        }
+        Update: {
+          analysis_duration_ms?: number
+          analysis_version?: string
+          created_at?: string
+          image_tokens?: number | null
+          input_tokens?: number | null
+          observations?: Json
+          output_tokens?: number | null
+          retry_count?: number
+          updated_at?: string
+          vision_model?: string
+          vision_provider?: string
+          walk_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "walk_analyses_walk_id_fkey"
+            columns: ["walk_id"]
+            isOneToOne: true
+            referencedRelation: "walks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       walk_photos: {
         Row: {
+          analysis_height: number | null
+          analysis_storage_path: string | null
+          analysis_width: number | null
           created_at: string
           height: number | null
           id: string
@@ -246,6 +390,9 @@ export type Database = {
           width: number | null
         }
         Insert: {
+          analysis_height?: number | null
+          analysis_storage_path?: string | null
+          analysis_width?: number | null
           created_at?: string
           height?: number | null
           id?: string
@@ -256,6 +403,9 @@ export type Database = {
           width?: number | null
         }
         Update: {
+          analysis_height?: number | null
+          analysis_storage_path?: string | null
+          analysis_width?: number | null
           created_at?: string
           height?: number | null
           id?: string
@@ -277,33 +427,39 @@ export type Database = {
       }
       walks: {
         Row: {
+          analysis_started_at: string | null
           completed_at: string | null
           cover_image_url: string | null
           created_at: string
           id: string
           location: string | null
+          recommendation_started_at: string | null
           status: Database["public"]["Enums"]["walk_status"]
           title: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          analysis_started_at?: string | null
           completed_at?: string | null
           cover_image_url?: string | null
           created_at?: string
           id?: string
           location?: string | null
+          recommendation_started_at?: string | null
           status?: Database["public"]["Enums"]["walk_status"]
           title?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          analysis_started_at?: string | null
           completed_at?: string | null
           cover_image_url?: string | null
           created_at?: string
           id?: string
           location?: string | null
+          recommendation_started_at?: string | null
           status?: Database["public"]["Enums"]["walk_status"]
           title?: string | null
           updated_at?: string
@@ -320,8 +476,23 @@ export type Database = {
         Args: { p_selected_tag_ids: string[]; p_walk_id: string }
         Returns: undefined
       }
+      confirm_discovery_v2: {
+        Args: { p_selected_discovery_id: string; p_walk_id: string }
+        Returns: undefined
+      }
       save_discovery_analysis: {
         Args: { p_tags: Json; p_title: string; p_walk_id: string }
+        Returns: undefined
+      }
+      save_discovery_analysis_v2: {
+        Args: {
+          p_analysis_version: string
+          p_discoveries: Json
+          p_metrics: Json
+          p_observations: Json
+          p_title: string
+          p_walk_id: string
+        }
         Returns: undefined
       }
       save_recommended_place: {
@@ -334,6 +505,15 @@ export type Database = {
           p_places: Json
           p_search_provider: string
           p_search_query: string
+          p_walk_id: string
+        }
+        Returns: undefined
+      }
+      save_walk_recommendations_v2: {
+        Args: {
+          p_metadata: Json
+          p_places: Json
+          p_selected_discovery_id: string
           p_walk_id: string
         }
         Returns: undefined
@@ -362,12 +542,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (DefaultSchemaTableNameOrOptions extends {
+  TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never) = never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -391,11 +571,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (DefaultSchemaTableNameOrOptions extends {
+  TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never) = never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -416,11 +596,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (DefaultSchemaTableNameOrOptions extends {
+  TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never) = never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -441,11 +621,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never) = never,
+    : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -458,11 +638,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never) = never,
+    : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -487,3 +667,4 @@ export const Constants = {
     },
   },
 } as const
+

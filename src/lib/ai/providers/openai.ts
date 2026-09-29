@@ -6,6 +6,7 @@ import { getRecommendPlacesPrompt } from "../prompts/recommendPlacesPrompt";
 import { zodResponseFormat } from "openai/helpers/zod";
 
 export class OpenAIProvider implements AIProvider {
+  readonly name = "openai";
   private client: OpenAI;
 
   constructor() {
@@ -19,6 +20,7 @@ export class OpenAIProvider implements AIProvider {
     const prompt = getAnalyzeWalkPrompt(input.images.length, input.location);
     const model = process.env.OPENAI_VISION_MODEL || process.env.AI_VISION_MODEL || "gpt-4o";
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const content: any[] = [
       { type: "text", text: prompt }
     ];
@@ -76,3 +78,4 @@ export class OpenAIProvider implements AIProvider {
     return parsed;
   }
 }
+

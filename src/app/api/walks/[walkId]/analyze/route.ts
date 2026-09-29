@@ -6,7 +6,7 @@ import { analyzeWalk } from '@/lib/ai/analyzeWalk';
 import { getSignedImageUrl } from '@/lib/images/getSignedImageUrl';
 
 export async function POST(
-  request: Request,
+  _request: Request,
   { params }: { params: Promise<{ walkId: string }> }
 ) {
   try {
@@ -24,7 +24,6 @@ export async function POST(
 
     const supabase = await createClient();
 
-    // Get walk and photos
     const { data: walk, error: walkError } = await supabase
       .from('walks')
       .select('status, location')
@@ -35,86 +34,103 @@ export async function POST(
       return NextResponse.json({ error: { code: 'WALK_NOT_FOUND', message: 'Walk not found' } }, { status: 404 });
     }
 
-    if (walk.status !== 'DRAFT' && walk.status !== 'ANALYZING') {
-      return NextResponse.json({ error: { code: 'INVALID_WALK_STATE', message: 'Walk must be DRAFT or ANALYZING to analyze' } }, { status: 400 });
+    // If analysis is already in progress, return 202. Do NOT restart it.
+    // The client should poll GET /api/walks/[walkId] until status changes.
+    if (walk.status === 'ANALYZING') {
+      return NextResponse.json(
+        { code: 'ANALYSIS_IN_PROGRESS', status: 'ANALYZING', walkId },
+        { status: 202 }
+      );
+    }
+
+    // If analysis is already done, return the current state immediately.
+    if (walk.status !== 'DRAFT') {
+      return NextResponse.json(
+        { walkId, status: walk.status },
+        { status: 200 }
+      );
+    }
+
+    // Atomically claim the analysis work: only transitions from DRAFT.
+    // If another request already moved it to ANALYZING, the update will match 0 rows.
+    const { data: updatedWalk, error: updateError } = await supabase
+      .from('walks')
+      .update({ status: 'ANALYZING', analysis_started_at: new Date().toISOString() })
+      .eq('id', walkId)
+      .eq('status', 'DRAFT')
+      .select('id')
+      .single();
+
+    if (updateError || !updatedWalk) {
+      // Another concurrent request won the race — treat as in-progress.
+      return NextResponse.json(
+        { code: 'ANALYSIS_IN_PROGRESS', status: 'ANALYZING', walkId },
+        { status: 202 }
+      );
     }
 
     const { data: photos, error: photosError } = await supabase
       .from('walk_photos')
-      .select('storage_path, sort_order')
+      .select('storage_path, sort_order, analysis_storage_path')
       .eq('walk_id', walkId)
       .order('sort_order', { ascending: true });
 
     if (photosError || !photos || photos.length === 0 || photos.length > 10) {
+      await supabase.from('walks').update({ status: 'DRAFT', analysis_started_at: null }).eq('id', walkId);
       return NextResponse.json({ error: { code: 'INVALID_PHOTO_COUNT', message: 'Must have 1-10 photos' } }, { status: 400 });
     }
 
-    // Transition to ANALYZING
-    const { error: updateAnalyzingError } = await supabase
-      .from('walks')
-      .update({ status: 'ANALYZING' })
-      .eq('id', walkId);
-
-    if (updateAnalyzingError) {
-      return NextResponse.json({ error: { code: 'AI_ANALYSIS_FAILED', message: 'Failed to update status to ANALYZING' } }, { status: 500 });
-    }
-
-    // Prepare images with signed URLs
+    // Build signed URLs using analysis_storage_path if available (compressed copy),
+    // falling back to original. Signed URLs are used server-side only and never returned to client.
     const images: Array<{ url: string; order: number }> = [];
     for (const photo of photos) {
-      const signedUrl = await getSignedImageUrl(photo.storage_path, 3600);
+      const path = photo.analysis_storage_path || photo.storage_path;
+      const signedUrl = await getSignedImageUrl(path, 600); // 10 minutes
       if (!signedUrl) {
-        return NextResponse.json({ error: { code: 'AI_ANALYSIS_FAILED', message: 'Failed to generate signed URLs for photos' } }, { status: 500 });
+        await supabase.from('walks').update({ status: 'DRAFT', analysis_started_at: null }).eq('id', walkId);
+        return NextResponse.json({ error: { code: 'AI_ANALYSIS_FAILED', message: '写真の分析に失敗しました。' } }, { status: 500 });
       }
       images.push({ url: signedUrl, order: photo.sort_order });
     }
 
-    // Call AI
     let analysisResult;
     try {
       analysisResult = await analyzeWalk({
         images,
-        location: walk.location,
-        outputLanguage: 'ja'
+        location: walk.location ?? undefined,
+        outputLanguage: 'ja',
       });
-    } catch (aiError: any) {
-      console.error('AI analysis threw error:', aiError);
+    } catch (aiError: unknown) {
+      console.error('AI analysis error:', aiError instanceof Error ? aiError.message : 'unknown');
+      await supabase.from('walks').update({ status: 'DRAFT', analysis_started_at: null }).eq('id', walkId);
       return NextResponse.json({ error: { code: 'AI_ANALYSIS_FAILED', message: '写真の分析に失敗しました。' } }, { status: 500 });
     }
 
-    // Save title and tags transactionally using Postgres RPC
-    const tagsPayload = analysisResult.tags.map((tag: any) => ({
-      label: tag.label,
-      category: tag.category,
-      reason: tag.reason,
-    }));
+    const { data, metadata } = analysisResult;
 
-    const { error: rpcError } = await supabase.rpc('save_discovery_analysis', {
+    const { error: rpcError } = await supabase.rpc('save_discovery_analysis_v2', {
       p_walk_id: walkId,
-      p_title: analysisResult.title,
-      p_tags: tagsPayload,
+      p_title: data.title,
+      p_observations: JSON.parse(JSON.stringify(data.observations ?? [])),
+      p_discoveries: JSON.parse(JSON.stringify(data.discoveries ?? [])),
+      p_analysis_version: '2.0',
+      p_metrics: JSON.parse(JSON.stringify(metadata)),
     });
 
     if (rpcError) {
-      console.error('RPC Error:', rpcError);
-      return NextResponse.json({ error: { code: 'AI_ANALYSIS_FAILED', message: 'Failed to save analysis results' } }, { status: 500 });
+      console.error('save_discovery_analysis_v2 RPC error:', rpcError.message);
+      await supabase.from('walks').update({ status: 'DRAFT', analysis_started_at: null }).eq('id', walkId);
+      return NextResponse.json({ error: { code: 'AI_ANALYSIS_FAILED', message: '写真の分析に失敗しました。' } }, { status: 500 });
     }
-
-    // Get the inserted tags to return
-    const { data: insertedTags } = await supabase
-      .from('discovery_tags')
-      .select('id, label, category, reason')
-      .eq('walk_id', walkId);
 
     return NextResponse.json({
       walkId,
       status: 'TAG_SELECTION',
-      title: analysisResult.title,
-      tags: insertedTags || [],
+      title: data.title,
     });
 
-  } catch (error: any) {
-    console.error('Unhandled error in analyze route:', error);
+  } catch (error: unknown) {
+    console.error('Unhandled error in analyze route:', error instanceof Error ? error.message : 'unknown');
     return NextResponse.json({ error: { code: 'AI_ANALYSIS_FAILED', message: '写真の分析に失敗しました。' } }, { status: 500 });
   }
 }

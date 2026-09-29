@@ -58,6 +58,7 @@ export async function deleteWalkAction(walkId: string) {
 
   // Delete storage objects
   if (photos && photos.length > 0) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const paths = photos.map((p: any) => p.storage_path);
     const { error: storageErr } = await supabase.storage
       .from('walk-photos')

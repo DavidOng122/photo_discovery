@@ -59,6 +59,7 @@ export function MinimalHome() {
         throw new Error(data?.error?.message || '写真の分析に失敗しました。');
       }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const normalized = (data.features ?? []).map((feature: any, index: number) => ({
         id: `${feature.label}-${index}`,
         label: feature.label,
@@ -181,8 +182,8 @@ export function MinimalHome() {
             category: feature.category ?? feature.type,
             reason: feature.reason,
           }))}
-          selectedIds={selectedIds}
-          onToggle={handleToggleFeature}
+          selectedId={selectedIds.size > 0 ? Array.from(selectedIds)[0] : null}
+          onSelect={handleToggleFeature}
           onBack={resetFlow}
           onNext={handleRecommend}
           isSubmitting={false}

@@ -7,6 +7,7 @@ function validateSelectedFeatures(selectedFeatures: unknown): Array<{ label: str
     throw new Error("Must select between 1 and 3 features.");
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return selectedFeatures.map((feature: any) => {
     const label = String(feature?.label ?? "").trim();
     const type = feature?.type;
@@ -42,7 +43,7 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({
-      places: output.places.map((place) => ({
+      places: output.data.places.map((place) => ({
         name: place.name,
         area: place.area ?? null,
         type: place.type ?? "area",
@@ -54,10 +55,11 @@ export async function POST(request: Request) {
         googleMapsUrl: buildGoogleMapsUrl(place.name, place.googleMapsQuery, place.area),
       })),
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Recommend route error:", error);
+    const message = error instanceof Error ? error.message : "おすすめ場所の生成に失敗しました。";
     return NextResponse.json({
-      error: { code: "AI_RECOMMENDATION_FAILED", message: error?.message || "おすすめ場所の生成に失敗しました。" },
+      error: { code: "AI_RECOMMENDATION_FAILED", message },
     }, { status: 500 });
   }
 }

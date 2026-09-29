@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import styles from './ThemeSelectionScreen.module.css';
 
-interface ThemeTag {
+export interface ThemeTag {
   id: string;
   label: string;
   category: string;
@@ -12,37 +12,38 @@ interface ThemeTag {
 
 interface ThemeSelectionScreenProps {
   tags: ThemeTag[];
-  selectedIds: ReadonlySet<string>;
-  onToggle: (id: string) => void;
+  selectedId: string | null;
+  onSelect: (id: string) => void;
   onBack: () => void;
   onNext: () => void;
   isSubmitting: boolean;
   error?: string;
 }
 
-const MAX_SELECTIONS = 3;
+const LENS_MAP: Record<string, string> = {
+  space: '空間',
+  culture: '文化',
+  nature: '自然',
+};
 
 export function ThemeSelectionScreen({
   tags,
-  selectedIds,
-  onToggle,
+  selectedId,
+  onSelect,
   onBack,
   onNext,
   isSubmitting,
   error,
 }: ThemeSelectionScreenProps) {
-  const selectionLimitReached = selectedIds.size >= MAX_SELECTIONS;
-
   return (
-    <section className={styles.screen} data-node-id="98:11">
-      <header className={styles.header} data-node-id="98:12">
+    <section className={styles.screen}>
+      <header className={styles.header}>
         <button
           type="button"
           className={styles.backButton}
           onClick={onBack}
           disabled={isSubmitting}
           aria-label="前の画面に戻る"
-          data-node-id="98:13"
         >
           <Image src="/figma/theme-selection-v2/asset-00.svg" alt="" width={24} height={24} unoptimized />
         </button>
@@ -51,38 +52,42 @@ export function ThemeSelectionScreen({
           type="button"
           className={styles.nextButton}
           onClick={onNext}
-          disabled={selectedIds.size === 0 || isSubmitting}
+          disabled={!selectedId || isSubmitting}
           aria-busy={isSubmitting}
-          data-node-id="98:16"
         >
-          <span data-node-id="98:17">次へ</span>
+          <span>この視点から次の場所を探す</span>
         </button>
       </header>
 
       <div className={styles.content}>
-        <h1 className={styles.heading} data-node-id="98:22">見つかった視点</h1>
-        <div className={styles.introduction} data-node-id="98:24">
-          <p className={styles.description} data-node-id="98:25">写真から、こんな視点が見つかりました</p>
-          <p className={styles.hint}>気になるものを1〜3個選んでください</p>
+        <h1 className={styles.heading}>写真から見つけた、{tags.length}つの視点</h1>
+        <div className={styles.introduction}>
+          <p className={styles.description}>写真から、こんな視点が見つかりました</p>
+          <p className={styles.hint}>気になるものを1つ選んでください</p>
         </div>
 
-        <div className={styles.tagList} aria-label="見つかった視点" data-node-id="98:28">
+        <div className={styles.discoveryList}>
           {tags.map((tag) => {
-            const selected = selectedIds.has(tag.id);
-            const unavailable = !selected && selectionLimitReached;
-
+            const isSelected = selectedId === tag.id;
+            
             return (
-              <button
-                key={tag.id}
-                type="button"
-                className={`${styles.tagButton} ${selected ? styles.selectedTag : ''}`}
-                onClick={() => onToggle(tag.id)}
-                disabled={isSubmitting || unavailable}
-                aria-pressed={selected}
-                title={tag.reason}
-              >
-                <span className={styles.tagLabel}>{tag.label}</span>
-              </button>
+              <div key={tag.id} className={`${styles.discoveryItem} ${isSelected ? styles.selected : ''}`}>
+                <button
+                  type="button"
+                  className={styles.discoveryButton}
+                  onClick={() => onSelect(tag.id)}
+                  disabled={isSubmitting}
+                  aria-pressed={isSelected}
+                >
+                  <span className={styles.discoveryLens}>{LENS_MAP[tag.category] || tag.category}</span>
+                  <span className={styles.discoveryLabel}>{tag.label}</span>
+                </button>
+                {isSelected && (
+                  <div className={styles.discoveryExplanation}>
+                    <p>{tag.reason}</p>
+                  </div>
+                )}
+              </div>
             );
           })}
         </div>

@@ -25,6 +25,9 @@ export interface GenerateRecommendationsInput {
     reason: string;
   }>;
   selectedFeatures?: DiscoveryFeature[];
+  selectedDiscoveryId?: string | null;
+  observations?: import('./schemas').Observation[];
+  recommendationCity?: string | null;
   currentCity?: string | null;
   originalLocation?: string | null;
   excludedPlaceNames?: string[];
@@ -32,6 +35,7 @@ export interface GenerateRecommendationsInput {
 }
 
 export interface AIProvider {
+  readonly name: string;
   analyzeWalk(input: AnalyzeWalkInput, retryCount?: number): Promise<AnalyzeWalkOutput>;
   generateRecommendations(input: GenerateRecommendationsInput, retryCount?: number): Promise<RecommendationOutput>;
 }

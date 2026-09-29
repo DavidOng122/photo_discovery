@@ -45,6 +45,7 @@ export class TavilySearchProvider implements SearchProvider {
       return [];
     }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const results: SearchResult[] = data.results.map((r: any) => ({
       title: r.title ?? '',
       url: r.url ?? '',

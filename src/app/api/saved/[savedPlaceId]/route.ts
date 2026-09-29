@@ -15,9 +15,10 @@ export async function DELETE(
 
     await unsavePlace(savedPlaceId);
     return NextResponse.json({ success: true });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Unsave place error:', err);
-    if (err.message?.includes('Access denied')) {
+    const message = err instanceof Error ? err.message : '';
+    if (message.includes('Access denied')) {
       return NextResponse.json({ error: { code: 'UNAUTHORIZED', message: 'Unauthorized' } }, { status: 403 });
     }
     return NextResponse.json({ error: { code: 'UNSAVE_FAILED', message: '保存を解除できませんでした。もう一度お試しください。' } }, { status: 500 });

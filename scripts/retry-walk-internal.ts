@@ -23,6 +23,7 @@ async function run() {
   
   // Create signed URLs
   const imageUrls = await Promise.all(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (photos || []).map(async (p: any, idx: number) => {
       const { data } = await supabase.storage.from('walk-photos').createSignedUrl(p.storage_path, 60 * 60);
       return { url: data?.signedUrl || '', order: idx };
@@ -50,8 +51,8 @@ async function run() {
     
     const { data: tags } = await supabase.from('discovery_tags').select('*').eq('walk_id', walk.id);
     console.log(`Found ${tags?.length} discovery tags for walk.`);
-  } catch (err: any) {
-    console.error("FAIL:", err.message);
+  } catch (err: unknown) {
+    console.error("FAIL:", err instanceof Error ? err.message : String(err));
   }
 }
 

@@ -3,7 +3,6 @@
 import React, { useCallback, useEffect, useRef, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageContainer } from '@/components/common/PageContainer';
-import { MIN_SELECTED_TAGS, MAX_SELECTED_TAGS } from '@/constants/discovery';
 import { AnalysisLoadingScreen } from '@/components/discovery/AnalysisLoadingScreen';
 import { ThemeSelectionScreen } from '@/components/discovery/ThemeSelectionScreen';
 import { ThemeRecommendationLoading } from '@/components/recommendation/ThemeRecommendationLoading';
@@ -22,6 +21,8 @@ interface AnalysisResult {
   tags: TagData[];
 }
 
+const POLL_INTERVAL_MS = 1500;
+
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error && error.message ? error.message : fallback;
 }
@@ -29,135 +30,203 @@ function getErrorMessage(error: unknown, fallback: string) {
 export default function DiscoverPage({ params }: { params: Promise<{ walkId: string }> }) {
   const { walkId } = use(params);
   const router = useRouter();
-  const [status, setStatus] = useState<'LOADING_STATE' | 'ANALYZING' | 'TAG_SELECTION' | 'ERROR'>('LOADING_STATE');
+  const [uiStatus, setUiStatus] = useState<'LOADING' | 'ANALYZING' | 'TAG_SELECTION' | 'ERROR'>('LOADING');
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const hasStarted = useRef(false);
-  
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isConfirming, setIsConfirming] = useState(false);
   const [confirmError, setConfirmError] = useState('');
 
-  const analyzeWalk = useCallback(async () => {
-    setStatus('ANALYZING');
+  const stopPolling = useCallback(() => {
+    if (pollTimer.current) {
+      clearInterval(pollTimer.current);
+      pollTimer.current = null;
+    }
+  }, []);
+
+  const fetchWalkState = useCallback(async (): Promise<string> => {
+    const stateRes = await fetch(`/api/walks/${walkId}`);
+    if (!stateRes.ok) throw new Error('Walk not found');
+    const { walk, photos, tags } = await stateRes.json() as {
+      walk: { status: string; title?: string };
+      photos: { url: string }[];
+      tags: TagData[];
+    };
+    setPhotoUrls((photos ?? []).map((photo) => photo.url));
+
+    if (walk.status === 'RECOMMENDING' || walk.status === 'COMPLETED') {
+      router.replace(`/walk/${walkId}/recommendations`);
+      return walk.status;
+    }
+
+    if (walk.status === 'TAG_SELECTION') {
+      setResult({ walkId, status: walk.status, title: walk.title ?? '', tags });
+      setUiStatus('TAG_SELECTION');
+      return walk.status;
+    }
+
+    if (walk.status === 'ANALYZING') {
+      setUiStatus('ANALYZING');
+      return walk.status;
+    }
+
+    return walk.status;
+  }, [walkId, router]);
+
+  const triggerAnalysis = useCallback(async () => {
+    setUiStatus('ANALYZING');
     setErrorMessage('');
     try {
       const response = await fetch(`/api/walks/${walkId}/analyze`, { method: 'POST' });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error?.message || '写真の分析に失敗しました。');
-      setResult(data);
-      setStatus('TAG_SELECTION');
+      const data = await response.json() as {
+        status?: string;
+        code?: string;
+        error?: { message?: string };
+        title?: string;
+        tags?: TagData[];
+      };
+
+      if (response.status === 202 && data.code === 'ANALYSIS_IN_PROGRESS') {
+        return 'ANALYZING';
+      }
+
+      if (!response.ok) {
+        throw new Error(data.error?.message ?? '写真の分析に失敗しました。');
+      }
+
+      return 'DONE';
     } catch (err: unknown) {
       console.error(err);
-      setStatus('ERROR');
+      setUiStatus('ERROR');
       setErrorMessage(getErrorMessage(err, '写真の分析に失敗しました。もう一度お試しください。'));
+      return 'ERROR';
     }
   }, [walkId]);
+
+  const startPolling = useCallback(() => {
+    if (pollTimer.current) return;
+    pollTimer.current = setInterval(() => {
+      fetchWalkState().then((status) => {
+        if (status !== 'ANALYZING' && status !== 'DRAFT') {
+          stopPolling();
+        }
+      }).catch((err: unknown) => {
+        console.error('Poll error:', err);
+      });
+    }, POLL_INTERVAL_MS);
+  }, [fetchWalkState, stopPolling]);
 
   useEffect(() => {
     if (hasStarted.current) return;
     hasStarted.current = true;
 
-    const checkStateAndAnalyze = async () => {
+    const init = async () => {
       try {
-        const stateRes = await fetch(`/api/walks/${walkId}`);
-        if (!stateRes.ok) throw new Error('Walk not found');
-        const { walk, photos, tags } = await stateRes.json();
-        setPhotoUrls((photos ?? []).map((photo: { url: string }) => photo.url));
-        
-        if (walk.status === 'RECOMMENDING' || walk.status === 'COMPLETED') {
-          router.replace(`/walk/${walkId}/recommendations`);
-          return;
+        const status = await fetchWalkState();
+        if (status === 'DRAFT') {
+          const analyzeResult = await triggerAnalysis();
+          if (analyzeResult === 'ANALYZING') {
+            startPolling();
+          } else if (analyzeResult === 'DONE') {
+            await fetchWalkState();
+          }
+        } else if (status === 'ANALYZING') {
+          startPolling();
         }
-
-        if (walk.status === 'DRAFT' || walk.status === 'ANALYZING') {
-          await analyzeWalk();
-        } else {
-          setResult({ walkId, status: walk.status, title: walk.title, tags });
-          setStatus('TAG_SELECTION');
-        }
-      } catch {
-        setStatus('ERROR');
-        setErrorMessage('状態の取得に失敗しました。');
+      } catch (err: unknown) {
+        setUiStatus('ERROR');
+        setErrorMessage(getErrorMessage(err, '状態の取得に失敗しました。'));
       }
     };
-    checkStateAndAnalyze();
-  }, [analyzeWalk, walkId, router]);
 
-  const handleToggleTag = (id: string) => {
-    setSelectedIds(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        if (next.size < MAX_SELECTED_TAGS) {
-          next.add(id);
-        }
+    init();
+
+    return () => stopPolling();
+  }, [fetchWalkState, triggerAnalysis, startPolling, stopPolling]);
+
+  const startAnalysis = () => {
+    hasStarted.current = false;
+    setUiStatus('LOADING');
+    // will re-trigger the effect logic by manual call
+    triggerAnalysis().then((res) => {
+      if (res === 'ANALYZING') {
+        startPolling();
+      } else if (res === 'DONE') {
+        fetchWalkState();
       }
-      return next;
     });
   };
 
+  const handleSelect = (id: string) => {
+    setSelectedId(id);
+  };
+
   const handleConfirm = async () => {
-    if (selectedIds.size < MIN_SELECTED_TAGS || selectedIds.size > MAX_SELECTED_TAGS) return;
-    
+    if (!selectedId) return;
+
     setIsConfirming(true);
     setConfirmError('');
 
-    const selectedTags = result?.tags.filter((tag) => selectedIds.has(tag.id)) ?? [];
     try {
-      sessionStorage.setItem(`walk:${walkId}:selected-tags`, JSON.stringify(selectedTags));
-    } catch {
-      // The API remains the source of truth if session storage is unavailable.
-    }
-
-    try {
-      const response = await fetch(`/api/walks/${walkId}/confirm-tags`, {
+      const response = await fetch(`/api/walks/${walkId}/select-discovery`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ selectedTagIds: Array.from(selectedIds) })
+        body: JSON.stringify({ discoveryId: selectedId }),
       });
-      
-      const data = await response.json();
+
+      const data = await response.json() as { error?: { code?: string; message?: string }; status?: string };
+
       if (!response.ok) {
-        throw new Error(data.error?.message || '選択した発見を保存できませんでした。もう一度お試しください。');
+        const code = data.error?.code;
+        if (code === 'SELECTION_ALREADY_CONFIRMED') {
+          // Another tab/request already confirmed — navigate to recommendations using server state
+          router.push(`/walk/${walkId}/recommendations`);
+          return;
+        }
+        throw new Error(data.error?.message ?? '選択した視点を確認できませんでした。');
       }
 
       router.push(`/walk/${walkId}/recommendations`);
     } catch (err: unknown) {
-      setConfirmError(getErrorMessage(err, '選択した発見を保存できませんでした。'));
+      setConfirmError(getErrorMessage(err, '選択した視点を確認できませんでした。'));
       setIsConfirming(false);
     }
   };
 
   return (
     <>
-      {(status === 'LOADING_STATE' || status === 'ANALYZING') && (
+      {(uiStatus === 'LOADING' || uiStatus === 'ANALYZING') && (
         <AnalysisLoadingScreen photoUrls={photoUrls} />
       )}
 
-      {status === 'TAG_SELECTION' && result && isConfirming && (
-        <ThemeRecommendationLoading tags={result.tags.filter((tag) => selectedIds.has(tag.id))} />
+      {uiStatus === 'TAG_SELECTION' && result && isConfirming && (
+        <ThemeRecommendationLoading tags={result.tags.filter((tag) => tag.id === selectedId)} />
       )}
 
-      {status === 'ERROR' && (
+      {uiStatus === 'ERROR' && (
         <PageContainer>
           <div style={{ textAlign: 'center', marginTop: '4rem' }}>
             <h2 style={{ fontSize: '1.25rem', color: '#b91c1c' }}>写真の分析に失敗しました。</h2>
             <p style={{ color: 'var(--muted)', marginTop: '1rem' }}>{errorMessage}</p>
-            <button onClick={analyzeWalk} style={{ marginTop: '2rem', padding: '0.75rem 1.5rem', backgroundColor: 'var(--primary)', color: 'white', border: 'none', borderRadius: '9999px', fontWeight: 'bold', cursor: 'pointer' }}>
+            <button
+              onClick={() => startAnalysis()}
+              style={{ marginTop: '2rem', padding: '0.75rem 1.5rem', backgroundColor: 'var(--primary)', color: 'white', border: 'none', borderRadius: '9999px', fontWeight: 'bold', cursor: 'pointer' }}
+            >
               もう一度分析する
             </button>
           </div>
         </PageContainer>
       )}
 
-      {status === 'TAG_SELECTION' && result && !isConfirming && (
+      {uiStatus === 'TAG_SELECTION' && result && !isConfirming && (
         <ThemeSelectionScreen
           tags={result.tags}
-          selectedIds={selectedIds}
-          onToggle={handleToggleTag}
+          selectedId={selectedId}
+          onSelect={handleSelect}
           onBack={() => router.back()}
           onNext={handleConfirm}
           isSubmitting={isConfirming}

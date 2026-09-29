@@ -33,10 +33,10 @@ export async function getCompletedWalks(): Promise<HomeWalk[]> {
   if (error || !walks) return [];
 
   const result: HomeWalk[] = await Promise.all(
-    walks.map(async (walk: any) => {
+      walks.map(async (walk) => {
       // Cover photo: first by sort_order
       const photos = (walk.walk_photos ?? []).sort(
-        (a: any, b: any) => a.sort_order - b.sort_order
+            (a, b) => a.sort_order - b.sort_order
       );
       let coverImageUrl: string | null = null;
       if (photos.length > 0) {
@@ -48,8 +48,8 @@ export async function getCompletedWalks(): Promise<HomeWalk[]> {
       }
 
       const selectedTags = (walk.discovery_tags ?? [])
-        .filter((t: any) => t.selected)
-        .map((t: any) => t.label);
+          .filter((t) => t.selected)
+          .map((t) => t.label);
 
       return {
         id: walk.id,

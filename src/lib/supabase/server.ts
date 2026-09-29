@@ -4,11 +4,16 @@ import { Database } from '@/types/database';
 
 export async function createClient() {
   const cookieStore = await cookies();
+  const { headers } = await import('next/headers');
+  const authHeader = (await headers()).get('Authorization');
 
   return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      global: {
+        headers: authHeader ? { Authorization: authHeader } : undefined,
+      },
       cookies: {
         getAll() {
           return cookieStore.getAll();
