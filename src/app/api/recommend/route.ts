@@ -57,9 +57,11 @@ export async function POST(request: Request) {
     });
   } catch (error: unknown) {
     console.error("Recommend route error:", error);
-    const message = error instanceof Error ? error.message : "おすすめ場所の生成に失敗しました。";
     return NextResponse.json({
-      error: { code: "AI_RECOMMENDATION_FAILED", message },
+      error: {
+        code: "AI_RECOMMENDATION_FAILED",
+        message: "おすすめ場所の生成に失敗しました。もう一度お試しください。",
+      },
     }, { status: 500 });
   }
 }

@@ -39,6 +39,7 @@ ${featureSummary}
 - 似た外見だけでなく、選ばれた特徴が共有される場所を推薦してください。
 - 実在する場所のみ推薦してください。
 - 3つだけ返してください。
+- type は必ず英語の "area" または "place" のどちらかにしてください。
 - neighborhood / area / shopping street / district / shrine / museum / cafe / park / historic district のような実在の場所を含めてください。
 - その場所が「なぜこの特徴に合うか」を日本語でわかりやすく説明してください。
 - 説明文は 1〜2 文で簡潔にしてください。

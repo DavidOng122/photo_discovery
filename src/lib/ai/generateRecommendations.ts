@@ -6,6 +6,10 @@ import { EnrichedRecommendationOutput, enrichPlaceResultsWithGooglePlaces } from
 export async function generateRecommendations(
   input: GenerateRecommendationsInput
 ): Promise<{ data: EnrichedRecommendationOutput; metadata: Record<string, unknown> }> {
+  if (!process.env.GOOGLE_PLACES_API_KEY && process.env.MOCK_GOOGLE_PLACES !== "true") {
+    throw new Error("GOOGLE_PLACES_API_KEY is missing");
+  }
+
   const provider = getAIProvider("recommendation");
 
   let lastError: Error | null = null;

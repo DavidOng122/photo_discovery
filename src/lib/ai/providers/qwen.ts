@@ -108,13 +108,31 @@ export class QwenProvider implements AIProvider {
 
     try {
       const parsedJson = JSON.parse(messageContent);
+      const selectedLabels = (
+        input.selectedFeatures?.map((feature) => feature.label)
+        ?? input.selectedTags?.map((tag) => tag.label)
+        ?? []
+      );
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const normalizedPlaces = (parsedJson.places ?? []).map((place: any) => ({
-        ...place,
-        matchedFeatures: Array.isArray(place.matchedFeatures) ? place.matchedFeatures : Array.isArray(place.matchedTags) ? place.matchedTags : [],
-        type: place.type ?? "place",
-        reason: place.reason ?? place.description ?? "",
-      }));
+      const normalizedPlaces = (parsedJson.places ?? []).map((place: any) => {
+        const rawMatchedFeatures = Array.isArray(place.matchedFeatures)
+          ? place.matchedFeatures
+          : Array.isArray(place.matchedTags)
+            ? place.matchedTags
+            : [];
+        const matchedFeatures = rawMatchedFeatures
+          .map((value: unknown) => String(value))
+          .filter((label: string) => selectedLabels.includes(label));
+
+        return {
+          ...place,
+          matchedFeatures: matchedFeatures.length > 0
+            ? matchedFeatures.slice(0, 3)
+            : selectedLabels.slice(0, 3),
+          type: String(place.type ?? '').toLowerCase() === 'area' ? 'area' : 'place',
+          reason: place.reason ?? place.description ?? "",
+        };
+      });
       return RecommendationOutputSchema.parse({ ...parsedJson, places: normalizedPlaces });
     } catch (error) {
       logger.error("Qwen generateRecommendations validation error", error);
