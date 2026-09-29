@@ -17,7 +17,7 @@
 
 .backButton,
 .nextButton,
-.discoveryButton {
+.tagButton {
   font-family: inherit;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
@@ -50,15 +50,19 @@
 }
 
 .nextButton:disabled {
-  background: #f0f1ef;
-  color: #959c97;
+  background: #eef1f3;
+  color: #9ba5ab;
 }
 
 .backButton:disabled,
 .nextButton:disabled,
-.discoveryButton:disabled { cursor: default; }
+.tagButton:disabled {
+  cursor: default;
+}
 
-.content { padding: 24px 26px 48px; }
+.content {
+  padding: 24px 26px 48px;
+}
 
 .heading {
   margin: 0;
@@ -68,7 +72,9 @@
   letter-spacing: -0.035em;
 }
 
-.introduction { margin-top: 12px; }
+.introduction {
+  margin-top: 12px;
+}
 
 .description,
 .hint {
@@ -80,108 +86,88 @@
   overflow-wrap: anywhere;
 }
 
-.description { color: #7c837f; }
-.hint { color: #64737d; }
+.description {
+  color: #7a8790;
+}
 
-.discoveryList {
+.hint {
+  color: #64737d;
+}
+
+.tagList {
   display: flex;
-  flex-direction: column;
-  gap: 16px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px 10px;
   padding-top: 32px;
 }
 
-.discoveryItem {
+.tagButton {
   display: flex;
-  flex-direction: column;
-  border: 1px solid #e5ebef;
-  border-radius: 18px;
-  background: #f6f9fb;
-  overflow: hidden;
-  transition: all 180ms ease;
-}
-
-.discoveryButton {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  min-height: 56px;
-  padding: 16px 20px;
-  border: none;
-  background: transparent;
-  color: #526470;
-  text-align: left;
-}
-
-.discoveryLens {
-  display: inline-flex;
+  flex: 0 1 auto;
   align-items: center;
   justify-content: center;
-  padding: 4px 8px;
-  margin-right: 12px;
-  border-radius: 4px;
-  background-color: #e5ebef;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 48px;
+  padding: 12px 20px;
+  border: 1px solid #dfe9ef;
+  border-radius: 999px;
+  background: #f7fafc;
   color: #526470;
-  font-size: 12px;
-  font-weight: 500;
-  line-height: 1;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
 }
 
-.selected .discoveryLens {
-  background-color: #8dbbd2;
-  color: #fff;
-}
-
-.discoveryLabel {
-  font-size: 16px;
-  font-weight: 600;
-  line-height: 1.4;
-  letter-spacing: 0.02em;
-}
-
-.selected {
-  border-color: #8dbbd2;
-  background: #eaf5fb;
-  box-shadow: inset 0 0 0 1px #8dbbd2;
-}
-
-.selected .discoveryButton {
-  color: #276887;
-  padding-bottom: 8px;
-}
-
-.discoveryExplanation {
-  padding: 0 20px 20px 20px;
-  color: #276887;
+.tagLabel {
   font-size: 14px;
+  font-weight: 500;
   line-height: 1.6;
-  opacity: 0;
-  animation: fadeIn 300ms forwards ease-out;
+  letter-spacing: 0.02em;
+  text-align: center;
+  overflow-wrap: anywhere;
 }
 
-.discoveryItem:not(.selected) {
-  opacity: 0.6;
+.selectedTag {
+  border-color: #82b8d3;
+  background: #e8f4fb;
+  color: #236887;
+  box-shadow: inset 0 0 0 0.5px #82b8d3;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-4px); }
-  to { opacity: 1; transform: translateY(0); }
+.tagButton:disabled:not(.selectedTag) {
+  opacity: 0.48;
 }
 
 .backButton:focus-visible,
 .nextButton:focus-visible,
-.discoveryButton:focus-visible {
+.tagButton:focus-visible {
   outline: 2px solid #467895;
   outline-offset: 4px;
 }
 
 @media (hover: hover) {
-  .discoveryItem:not(.selected):not(:disabled):hover {
-    background: #eef5f8;
-    border-color: #bfd2dc;
-    opacity: 1;
+  .tagButton:not(:disabled):hover {
+    border-color: #a9c9d9;
+    background: #eef7fb;
   }
-  .nextButton:not(:disabled):hover { background: #386985; }
-  .backButton:not(:disabled):hover { background: #f2f7fa; }
+
+  .selectedTag:not(:disabled):hover {
+    border-color: #72abc7;
+    background: #e1f1f9;
+  }
+
+  .nextButton:not(:disabled):hover {
+    background: #386985;
+  }
+
+  .backButton:not(:disabled):hover {
+    background: #f2f7fa;
+  }
 }
 
 .error {
@@ -192,15 +178,29 @@
 }
 
 @media (max-width: 350px) {
-  .header { padding-right: 20px; padding-left: 20px; }
-  .content { padding-right: 20px; padding-left: 20px; }
-  .heading { font-size: 24px; }
-  .discoveryButton { padding-right: 16px; padding-left: 16px; }
-  .discoveryExplanation { padding: 0 16px 16px 16px; }
+  .header {
+    padding-right: 20px;
+    padding-left: 20px;
+  }
+
+  .content {
+    padding-right: 20px;
+    padding-left: 20px;
+  }
+
+  .heading {
+    font-size: 24px;
+  }
+
+  .tagButton {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .discoveryItem,
-  .nextButton { transition: none; }
-  .discoveryExplanation { animation: none; opacity: 1; }
+  .tagButton,
+  .nextButton {
+    transition: none;
+  }
 }

@@ -107,12 +107,32 @@ export async function POST(
     }
 
     const { data, metadata } = analysisResult;
+    const observations = data.observations?.length
+      ? data.observations
+      : data.tags.map((tag, index) => ({
+          id: `tag-${index + 1}`,
+          description: tag.reason,
+          type: tag.type ?? tag.category ?? 'style',
+          matchedFeatures: [tag.label],
+        }));
+    const discoveries = data.discoveries?.length
+      ? data.discoveries
+      : data.tags.map((tag, index) => ({
+          lens: tag.type === 'culture'
+            ? 'culture'
+            : tag.type === 'atmosphere' || tag.category === 'Nature'
+              ? 'nature'
+              : 'space',
+          phrase: tag.label,
+          explanation: tag.reason,
+          observationIds: [observations[index]?.id ?? `tag-${index + 1}`],
+        }));
 
     const { error: rpcError } = await supabase.rpc('save_discovery_analysis_v2', {
       p_walk_id: walkId,
       p_title: data.title,
-      p_observations: JSON.parse(JSON.stringify(data.observations ?? [])),
-      p_discoveries: JSON.parse(JSON.stringify(data.discoveries ?? [])),
+      p_observations: JSON.parse(JSON.stringify(observations)),
+      p_discoveries: JSON.parse(JSON.stringify(discoveries)),
       p_analysis_version: '2.0',
       p_metrics: JSON.parse(JSON.stringify(metadata)),
     });

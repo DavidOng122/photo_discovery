@@ -80,13 +80,7 @@ export function MinimalHome() {
 
   const handleToggleFeature = (id: string) => {
     setSelectedIds((current) => {
-      const next = new Set(current);
-      if (next.has(id)) {
-        next.delete(id);
-      } else if (next.size < 3) {
-        next.add(id);
-      }
-      return next;
+      return current.has(id) ? new Set() : new Set([id]);
     });
   };
 

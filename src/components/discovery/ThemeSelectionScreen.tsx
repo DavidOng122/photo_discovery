@@ -20,12 +20,6 @@ interface ThemeSelectionScreenProps {
   error?: string;
 }
 
-const LENS_MAP: Record<string, string> = {
-  space: '空間',
-  culture: '文化',
-  nature: '自然',
-};
-
 export function ThemeSelectionScreen({
   tags,
   selectedId,
@@ -55,39 +49,33 @@ export function ThemeSelectionScreen({
           disabled={!selectedId || isSubmitting}
           aria-busy={isSubmitting}
         >
-          <span>この視点から次の場所を探す</span>
+          <span>次へ</span>
         </button>
       </header>
 
       <div className={styles.content}>
-        <h1 className={styles.heading}>写真から見つけた、{tags.length}つの視点</h1>
+        <h1 className={styles.heading}>見つかった視点</h1>
         <div className={styles.introduction}>
-          <p className={styles.description}>写真から、こんな視点が見つかりました</p>
+          <p className={styles.description}>写真から、こんな特徴を見つけました</p>
           <p className={styles.hint}>気になるものを1つ選んでください</p>
         </div>
 
-        <div className={styles.discoveryList}>
+        <div className={styles.tagList} aria-label="見つかった視点">
           {tags.map((tag) => {
             const isSelected = selectedId === tag.id;
-            
+
             return (
-              <div key={tag.id} className={`${styles.discoveryItem} ${isSelected ? styles.selected : ''}`}>
-                <button
-                  type="button"
-                  className={styles.discoveryButton}
-                  onClick={() => onSelect(tag.id)}
-                  disabled={isSubmitting}
-                  aria-pressed={isSelected}
-                >
-                  <span className={styles.discoveryLens}>{LENS_MAP[tag.category] || tag.category}</span>
-                  <span className={styles.discoveryLabel}>{tag.label}</span>
-                </button>
-                {isSelected && (
-                  <div className={styles.discoveryExplanation}>
-                    <p>{tag.reason}</p>
-                  </div>
-                )}
-              </div>
+              <button
+                key={tag.id}
+                type="button"
+                className={`${styles.tagButton} ${isSelected ? styles.selectedTag : ''}`}
+                onClick={() => onSelect(tag.id)}
+                disabled={isSubmitting}
+                aria-pressed={isSelected}
+                title={tag.reason}
+              >
+                <span className={styles.tagLabel}>{tag.label}</span>
+              </button>
             );
           })}
         </div>

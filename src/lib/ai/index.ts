@@ -8,8 +8,10 @@ export type AIProviderKind = "vision" | "recommendation";
 type ProviderName = "openai" | "qwen" | "mock";
 
 export function getAIProvider(kind: AIProviderKind = "recommendation"): AIProvider {
-  void kind; // kind reserved for future per-context provider selection
-  const providerEnv = (process.env.AI_PROVIDER ?? "mock").toLowerCase() as ProviderName;
+  const configuredProvider = kind === "vision"
+    ? process.env.VISION_PROVIDER ?? process.env.QWEN_PROVIDER ?? process.env.AI_PROVIDER ?? "qwen"
+    : process.env.RECOMMENDATION_PROVIDER ?? process.env.OPENAI_PROVIDER ?? process.env.AI_PROVIDER ?? "openai";
+  const providerEnv = configuredProvider.toLowerCase() as ProviderName;
 
   switch (providerEnv) {
     case "openai":
@@ -18,11 +20,7 @@ export function getAIProvider(kind: AIProviderKind = "recommendation"): AIProvid
       return new QwenProvider();
     case "mock":
       return new MockProvider();
-    default: {
-      // Fallback to mock for unknown providers (type-safe exhaustive check)
-      const _exhaustive: never = providerEnv;
-      void _exhaustive;
-      return new MockProvider();
-    }
+    default:
+      throw new Error(`Unsupported ${kind} AI provider: ${configuredProvider}`);
   }
 }

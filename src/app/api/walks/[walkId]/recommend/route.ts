@@ -138,6 +138,11 @@ export async function POST(
     let recommendationOutput;
     try {
       recommendationOutput = await generateRecommendations({
+        selectedTags: [{
+          label: selectedTags[0].label,
+          category: selectedTags[0].category,
+          reason: selectedTags[0].reason,
+        }],
         selectedDiscoveryId,
         observations,
         recommendationCity: "Tokyo",
