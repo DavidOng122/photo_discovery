@@ -8,22 +8,21 @@
 }
 
 .content {
-  position: absolute;
-  top: 164px;
-  left: 50%;
-  width: 402px;
+  position: relative;
+  width: min(100%, 402px);
   height: 508px;
-  transform: translateX(-50%);
+  margin: clamp(32px, calc((100dvh - 508px) / 2), 164px) auto 0;
 }
 
 .heading {
   position: absolute;
   top: 0;
-  left: 72.01px;
+  left: 50%;
   display: flex;
   width: 239.979px;
   flex-direction: column;
   align-items: center;
+  transform: translateX(-50%);
 }
 
 .heading h1 {
@@ -47,9 +46,10 @@
 .progressTrack {
   position: absolute;
   top: 104px;
-  left: 106px;
+  left: 50%;
   width: 190px;
   height: 3px;
+  transform: translateX(-50%);
   overflow: hidden;
   border-radius: 99px;
   background: #e5e5e5;
@@ -67,9 +67,10 @@
 .photoDeck {
   position: absolute;
   top: 177px;
-  left: 102px;
+  left: 50%;
   width: 180px;
   height: 236px;
+  transform: translateX(-50%);
 }
 
 .leftMotion,
@@ -169,7 +170,8 @@
 .waitingText {
   position: absolute;
   top: 486px;
-  left: 110px;
+  left: 50%;
+  width: max-content;
   margin: 0;
   color: #898888;
   font-family: Arial, sans-serif;
@@ -179,6 +181,27 @@
   line-height: 21.6px;
   letter-spacing: 0.288px;
   white-space: nowrap;
+  transform: translateX(-50%);
+}
+
+@media (max-width: 360px) {
+  .photoDeck {
+    transform: translateX(-50%) scale(0.78);
+    transform-origin: top center;
+  }
+
+  .waitingText {
+    font-size: 17px;
+    letter-spacing: 0;
+  }
+}
+
+@media (max-height: 620px) {
+  .content {
+    margin-top: 24px;
+    transform: scale(0.82);
+    transform-origin: top center;
+  }
 }
 
 @keyframes centerFloat {

@@ -13,8 +13,9 @@ export function AppShell({ children }: AppShellProps) {
       <div
         style={{
           margin: '0 auto',
-          maxWidth: '402px',
-          minHeight: '100vh',
+          width: '100%',
+          maxWidth: '1440px',
+          minHeight: '100dvh',
           position: 'relative',
           backgroundColor: 'var(--background)',
           boxShadow: '0 0 10px rgba(0,0,0,0.05)',
@@ -22,7 +23,7 @@ export function AppShell({ children }: AppShellProps) {
       >
         <main
           style={{
-            minHeight: '100vh',
+            minHeight: '100dvh',
           }}
         >
           {children}

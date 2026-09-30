@@ -12,9 +12,8 @@
   width: 100%;
   flex-direction: column;
   align-items: center;
-  gap: 48px;
-  padding-top: 138px;
-  padding-bottom: 58px;
+  gap: 40px;
+  padding: 96px 24px 48px;
 }
 
 .hero {
@@ -22,45 +21,38 @@
   width: 100%;
   flex-direction: column;
   align-items: center;
-  gap: 36px;
+  gap: 28px;
 }
 
 .copy {
   position: relative;
-  width: 314px;
-  height: 138px;
-  flex: 0 0 138px;
+  width: min(100%, 360px);
 }
 
 .copy h1 {
-  width: 348px;
-  height: 81px;
+  width: 100%;
   margin: 0;
   color: #11110f;
   font-size: 32px;
   font-weight: 510;
-  line-height: 44px;
-  letter-spacing: 0.85px;
-  white-space: nowrap;
+  line-height: 1.4;
+  letter-spacing: 0;
 }
 
 .copy p {
-  position: absolute;
-  top: 94px;
-  left: 0;
-  margin: 0;
+  margin: 14px 0 0;
   color: #7d7a76;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 400;
-  line-height: 24.05px;
-  letter-spacing: 0.455px;
-  white-space: nowrap;
+  line-height: 1.8;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
 }
 
 .collage {
   position: relative;
-  width: calc(100% - 1px);
-  align-self: flex-start;
+  width: 100%;
+  max-width: 760px;
   aspect-ratio: 401 / 394;
   overflow: hidden;
 }
@@ -98,27 +90,63 @@
   box-shadow: 0 0 0 5px #11110f;
 }
 
-@media (max-width: 360px) {
+@media (max-width: 380px) {
   .layout {
-    padding-top: 112px;
+    padding: 48px 20px 32px;
   }
 
   .copy {
-    width: calc(100% - 56px);
-    height: 130px;
-    flex-basis: 130px;
+    width: 100%;
   }
 
   .copy h1 {
-    width: auto;
-    font-size: 28px;
-    line-height: 39px;
+    font-size: 24px;
   }
 
   .copy p {
-    top: 86px;
-    font-size: 11.5px;
-    letter-spacing: 0.25px;
+    margin-top: 10px;
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .collage {
+    aspect-ratio: 1 / 0.88;
+  }
+}
+
+@media (min-width: 760px) {
+  .layout {
+    min-height: 100dvh;
+    justify-content: center;
+    padding: 72px clamp(48px, 7vw, 100px);
+  }
+
+  .hero {
+    flex-direction: row;
+    justify-content: space-between;
+    gap: clamp(48px, 7vw, 104px);
+  }
+
+  .copy {
+    width: min(40%, 440px);
+    flex: 0 1 440px;
+  }
+
+  .copy h1 {
+    font-size: 40px;
+    line-height: 1.4;
+  }
+
+  .copy p {
+    max-width: 390px;
+    font-size: 15px;
+  }
+
+  .collage {
+    width: auto;
+    max-width: 680px;
+    flex: 1 1 0;
+    aspect-ratio: 1 / 0.92;
   }
 }
 
