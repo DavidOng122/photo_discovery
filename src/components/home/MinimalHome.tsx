@@ -104,6 +104,7 @@ export function MinimalHome() {
   const handleRecommend = async () => {
     if (!selectedDiscovery) return;
 
+    const selectionStartedAt = performance.now();
     setStep('recommending');
     setError('');
 
@@ -125,6 +126,10 @@ export function MinimalHome() {
         throw new Error(data?.error?.message || 'おすすめの生成に失敗しました。');
       }
 
+      console.info('[recommendation_flow_timing]', JSON.stringify({
+        selection_to_results_ms: Math.round(performance.now() - selectionStartedAt),
+        server_timing: res.headers.get('Server-Timing'),
+      }));
       setRecommendations(data.places ?? []);
       setStep('results');
     } catch (err: unknown) {

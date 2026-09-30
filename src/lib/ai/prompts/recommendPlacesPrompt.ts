@@ -15,56 +15,23 @@ export function getRecommendPlacesPrompt(input: GenerateRecommendationsInput): s
     selectedPerspective = "東京の独自の魅力・視点";
   }
 
-  const currentCity = input.currentCity ?? "Tokyo";
+  const currentCity = input.recommendationCity ?? input.currentCity ?? "Tokyo";
   const excludedList =
     (input.excludedPlaceNames ?? []).length > 0
       ? `以下の場所は除外してください:\n${(input.excludedPlaceNames ?? []).map((n) => `- ${n}`).join("\n")}`
       : "";
 
-  return `あなたは写真から見つかった「視点・魅力」に基づいて、東京でその視点をさらに体験できる実在の場所を推薦する専門キュレーターです。
+    return `${currentCity}で、選択した視点を実際に体験できる場所を3つ推薦してください。
 
-ユーザーが写真から発見・選択した視点:
-「${selectedPerspective}」
+  視点: 「${selectedPerspective}」
 
-推薦対象エリア: ${currentCity}
+  見た目が似ているだけの場所ではなく、視点の意味や関係性を体験できる、実在する具体的な場所を選んでください。場所名は重複させず、確信のない場所は含めないでください。
+  ${excludedList}
 
-【重要な推薦ルール】
-1. 視点の体験（最重要）:
-   - 写真と「見た目が似ている場所」を推薦しないでください。
-   - 選ばれた視点（例: 「伝統的な日本建築と庭園の調和」）を、東京の街歩きの中で実際に体験・味わえる場所を推薦してください。
-2. 実在する場所:
-   - 必ず東京に実在し、Google Maps で訪れることができる具体的なスポット（神社、庭園、通り、美術館、歴史ある街区、建築など）を選んでください。
-3. 推薦件数:
-   - 厳選した3箇所を推薦してください。
-4. 説明文 (reason):
-   - 写真で発見した視点をなぜその場所で体験できるのかを、簡潔で魅力的な日本語（1〜2文）で説明してください。
-   - 例: 「歴史ある建築と自然が調和した空間で、写真で発見した視点をさらに体験できます。」
-5. googleMapsQuery:
-   - 「場所名 エリア名 Tokyo」の形式にしてください（例: "根津神社 文京区 Tokyo"）。
-6. type:
-   - 必ず "place" にしてください。
-7. matchedFeatures:
-   - 選択された視点のフレーズを含めてください。
+  各 reason は、選んだ視点とその場所のつながりを説明する簡潔な日本語1文にしてください。長い説明や推論過程は不要です。
+  googleMapsQuery は「場所名 エリア名 Tokyo」の形式にしてください。
 
-${excludedList}
-
-必ず以下のJSON形式のみを出力してください（placesキーを持つJSONオブジェクトのみ）:
-\`\`\`json
-{
-  "places": [
-    {
-      "name": "根津神社",
-      "area": "文京区",
-      "type": "place",
-      "reason": "歴史ある建築と自然が調和した空間で、写真で発見した視点をさらに体験できます。",
-      "matchedFeatures": ["${input.selectedDiscovery?.phrase || (input.selectedFeatures?.[0]?.label ?? '選択した視点')}"],
-      "googleMapsQuery": "根津神社 文京区 Tokyo",
-      "googlePlaceId": null,
-      "formattedAddress": null,
-      "imageUrl": null
-    }
-  ]
-}
-\`\`\``;
+  次の JSON だけを返してください。余分な項目、Markdown、前置きは不要です。
+  {"places":[{"name":"場所名","area":"エリア名","reason":"視点とのつながりを説明する一文","googleMapsQuery":"場所名 エリア名 Tokyo"}]}`;
 }
 

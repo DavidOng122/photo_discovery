@@ -16,8 +16,17 @@ export async function generateRecommendations(
   let lastError: Error | null = null;
 
   for (let attempt = 0; attempt < 2; attempt++) {
+    const attemptStartedAt = performance.now();
+    let modelDurationMs = 0;
+    let googlePlacesDurationMs = 0;
+    let stage = "model";
+
     try {
+      const modelStartedAt = performance.now();
       const raw = await provider.generateRecommendations(input);
+      modelDurationMs = Math.round(performance.now() - modelStartedAt);
+
+      stage = "validation";
       const result = RecommendationOutputSchema.parse(raw);
 
       const selectedLabels = new Set(
@@ -46,11 +55,34 @@ export async function generateRecommendations(
         }
       }
 
+      stage = "google_places";
+      const googlePlacesStartedAt = performance.now();
       const enrichedResult = await enrichPlaceResultsWithGooglePlaces(result);
-      return { data: enrichedResult, metadata: { provider: provider.name, model: "recommendation", duration_ms: 1000, retry_count: attempt, recommendation_version: "2.0" } };
+      googlePlacesDurationMs = Math.round(performance.now() - googlePlacesStartedAt);
+
+      const durationMs = Math.round(performance.now() - attemptStartedAt);
+      const metadata = {
+        provider: provider.name,
+        model: "recommendation",
+        duration_ms: durationMs,
+        model_duration_ms: modelDurationMs,
+        google_places_duration_ms: googlePlacesDurationMs,
+        retry_count: attempt,
+        recommendation_version: "2.0",
+      };
+
+      console.info("[recommendation_timing]", JSON.stringify({
+        provider: provider.name,
+        model_ms: modelDurationMs,
+        google_places_ms: googlePlacesDurationMs,
+        total_ms: durationMs,
+        retry_count: attempt,
+      }));
+
+      return { data: enrichedResult, metadata };
     } catch (err: unknown) {
       const e = err instanceof Error ? err : new Error(String(err));
-      console.warn(`Recommendation attempt ${attempt + 1} failed:`, e.message);
+      console.warn(`Recommendation attempt ${attempt + 1} failed during ${stage}:`, e.message);
       lastError = e;
     }
   }

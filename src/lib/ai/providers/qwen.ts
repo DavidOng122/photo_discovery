@@ -1,4 +1,8 @@
 import OpenAI from "openai";
+import type {
+  ChatCompletion,
+  ChatCompletionCreateParamsNonStreaming,
+} from "openai/resources/chat/completions";
 import { AIProvider, AnalyzeWalkInput, GenerateRecommendationsInput } from "../provider";
 import { AnalyzeWalkOutput, AnalyzeWalkOutputSchema, RecommendationOutput, RecommendationOutputSchema } from "../schemas";
 import { getAnalyzeWalkPrompt } from "../prompts/analyzeWalkPrompt";
@@ -116,8 +120,9 @@ export class QwenProvider implements AIProvider {
     const basePrompt = getRecommendPlacesPrompt(input);
     const prompt = `${basePrompt}\n\nIMPORTANT: You must return the result as a valid JSON object.`;
     const model = process.env.QWEN_TEXT_MODEL || process.env.AI_TEXT_MODEL || "qwen-plus";
+    const enableThinking = process.env.QWEN_RECOMMENDATION_ENABLE_THINKING === "true";
 
-    const response = await this.client.chat.completions.create({
+    const requestBody: ChatCompletionCreateParamsNonStreaming & { enable_thinking: boolean } = {
       model,
       messages: [
         {
@@ -126,7 +131,27 @@ export class QwenProvider implements AIProvider {
         }
       ],
       response_format: { type: "json_object" },
-    });
+      max_tokens: 512,
+      enable_thinking: enableThinking,
+    };
+
+    let response: ChatCompletion;
+    try {
+      response = await this.client.chat.completions.create(
+        requestBody as ChatCompletionCreateParamsNonStreaming
+      );
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (!message.toLowerCase().includes("enable_thinking")) throw error;
+
+      logger.warn("Qwen endpoint does not support enable_thinking; retrying without it");
+      const fallbackBody = Object.fromEntries(
+        Object.entries(requestBody).filter(([key]) => key !== "enable_thinking")
+      );
+      response = await this.client.chat.completions.create(
+        fallbackBody as unknown as ChatCompletionCreateParamsNonStreaming
+      );
+    }
 
     const messageContent = response.choices[0]?.message?.content;
     if (!messageContent) {

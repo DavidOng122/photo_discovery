@@ -163,24 +163,9 @@ export async function enrichPlaceResultsWithGooglePlaces(
         }
 
         const photoName = bestCandidate?.photos?.[0]?.name ?? null;
-        let imageUrl: string | null = place.imageUrl ?? null;
-
-        if (photoName) {
-          try {
-            const mediaRes = await fetch(
-              `https://places.googleapis.com/v1/${photoName}/media?maxWidthPx=800&skipHttpRedirect=true&key=${apiKey}`,
-              { cache: 'no-store' }
-            );
-            if (mediaRes.ok) {
-              const mediaData = (await mediaRes.json()) as { photoUri?: string };
-              if (mediaData.photoUri) {
-                imageUrl = mediaData.photoUri;
-              }
-            }
-          } catch (photoErr) {
-            console.warn(`Failed to fetch photoUri for ${place.name}:`, photoErr);
-          }
-        }
+        const imageUrl = photoName
+          ? `/api/places/photo?name=${encodeURIComponent(photoName)}`
+          : place.imageUrl ?? null;
 
         return {
           name: place.name,

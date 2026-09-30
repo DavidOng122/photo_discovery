@@ -3,6 +3,8 @@ import { generateRecommendations } from "@/lib/ai/generateRecommendations";
 import { buildGoogleMapsUrl } from "@/lib/maps/buildGoogleMapsUrl";
 
 export async function POST(request: Request) {
+  const requestStartedAt = performance.now();
+
   try {
     const body = await request.json();
 
@@ -48,7 +50,7 @@ export async function POST(request: Request) {
       excludedPlaceNames: [],
     });
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       places: output.data.places.map((place) => ({
         name: place.name,
         area: place.area ?? null,
@@ -61,6 +63,14 @@ export async function POST(request: Request) {
         googleMapsUrl: buildGoogleMapsUrl(place.name, place.googleMapsQuery, place.area),
       })),
     });
+
+    response.headers.set("Server-Timing", [
+      `model;dur=${Number(output.metadata.model_duration_ms ?? 0)}`,
+      `google_places;dur=${Number(output.metadata.google_places_duration_ms ?? 0)}`,
+      `total;dur=${Math.round(performance.now() - requestStartedAt)}`,
+    ].join(", "));
+
+    return response;
   } catch (error: unknown) {
     console.error("Recommend route error:", error);
     return NextResponse.json({
