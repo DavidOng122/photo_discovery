@@ -12,8 +12,8 @@
   width: 100%;
   flex-direction: column;
   align-items: center;
-  gap: 40px;
-  padding: 96px 24px 48px;
+  gap: clamp(28px, 9vw, 40px);
+  padding: clamp(48px, 11vh, 96px) clamp(20px, 6vw, 24px) 48px;
 }
 
 .hero {
@@ -33,7 +33,7 @@
   width: 100%;
   margin: 0;
   color: #11110f;
-  font-size: 32px;
+  font-size: clamp(24px, 7.9vw, 32px);
   font-weight: 510;
   line-height: 1.4;
   letter-spacing: 0;
@@ -52,7 +52,7 @@
 .collage {
   position: relative;
   width: 100%;
-  max-width: 760px;
+  max-width: 382px;
   aspect-ratio: 401 / 394;
   overflow: hidden;
 }
@@ -111,42 +111,6 @@
 
   .collage {
     aspect-ratio: 1 / 0.88;
-  }
-}
-
-@media (min-width: 760px) {
-  .layout {
-    min-height: 100dvh;
-    justify-content: center;
-    padding: 72px clamp(48px, 7vw, 100px);
-  }
-
-  .hero {
-    flex-direction: row;
-    justify-content: space-between;
-    gap: clamp(48px, 7vw, 104px);
-  }
-
-  .copy {
-    width: min(40%, 440px);
-    flex: 0 1 440px;
-  }
-
-  .copy h1 {
-    font-size: 40px;
-    line-height: 1.4;
-  }
-
-  .copy p {
-    max-width: 390px;
-    font-size: 15px;
-  }
-
-  .collage {
-    width: auto;
-    max-width: 680px;
-    flex: 1 1 0;
-    aspect-ratio: 1 / 0.92;
   }
 }
 

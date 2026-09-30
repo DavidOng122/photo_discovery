@@ -6,6 +6,7 @@ import { PhotoActionSheet } from '@/components/upload/PhotoActionSheet';
 import { AnalysisLoadingScreen } from '@/components/discovery/AnalysisLoadingScreen';
 import { ThemeSelectionScreen } from '@/components/discovery/ThemeSelectionScreen';
 import { ThemeRecommendationLoading } from '@/components/recommendation/ThemeRecommendationLoading';
+import { RecommendationResultScreen } from '@/components/recommendation/RecommendationResultScreen';
 import styles from './MinimalHome.module.css';
 
 type FlowStep = 'upload' | 'analyzing' | 'perspective-selection' | 'recommending' | 'results';
@@ -208,77 +209,7 @@ export function MinimalHome() {
       )}
 
       {step === 'results' && (
-        <section style={{ padding: '2rem 1.25rem', maxWidth: '1100px', margin: '0 auto', minHeight: '100vh' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', marginBottom: '1.75rem' }}>
-            <div>
-              {selectedDiscovery && (
-                <p style={{ color: '#236887', background: '#e8f4fb', display: 'inline-block', padding: '0.3rem 0.8rem', borderRadius: '999px', fontSize: '0.85rem', fontWeight: 600, margin: '0 0 0.5rem' }}>
-                  視点: {selectedDiscovery.phrase}
-                </p>
-              )}
-              <h1 style={{ margin: '0.25rem 0 0', fontSize: '1.75rem', fontWeight: 700, color: '#111827' }}>おすすめの場所</h1>
-            </div>
-            <button
-              type="button"
-              onClick={resetFlow}
-              style={{
-                borderRadius: '999px',
-                border: '1px solid #d1d5db',
-                background: '#fff',
-                padding: '0.6rem 1.1rem',
-                fontSize: '0.875rem',
-                fontWeight: 500,
-                color: '#374151',
-                cursor: 'pointer',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              もう一度
-            </button>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
-            {recommendations.map((place) => (
-              <article key={`${place.name}-${place.area ?? 'tokyo'}`} style={{ background: '#fff', borderRadius: '20px', overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,0.06)', border: '1px solid #ececec', display: 'flex', flexDirection: 'column' }}>
-                {place.imageUrl && (
-                  <div style={{ height: '180px', backgroundImage: `url(${place.imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
-                )}
-                <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', flex: 1 }}>
-                  <div style={{ fontWeight: 700, fontSize: '1.3rem', color: '#111827', marginBottom: '0.25rem' }}>
-                    {place.name}
-                  </div>
-                  {place.area && (
-                    <div style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '0.75rem' }}>
-                      {place.area}
-                    </div>
-                  )}
-                  <p style={{ color: '#4b5563', lineHeight: 1.7, fontSize: '0.95rem', margin: '0 0 1.25rem', flex: 1 }}>
-                    {place.reason}
-                  </p>
-                  <a
-                    href={place.googleMapsUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{
-                      display: 'block',
-                      textAlign: 'center',
-                      textDecoration: 'none',
-                      background: '#111827',
-                      color: '#fff',
-                      borderRadius: '999px',
-                      padding: '0.8rem 1rem',
-                      fontWeight: 600,
-                      fontSize: '0.9rem',
-                      transition: 'background-color 150ms ease',
-                    }}
-                  >
-                    Google Mapsで開く
-                  </a>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
+        <RecommendationResultScreen places={recommendations} onRestart={resetFlow} />
       )}
 
       {error && step !== 'perspective-selection' && step !== 'results' && (

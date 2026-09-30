@@ -9,7 +9,7 @@
 
 .content {
   position: relative;
-  width: min(100%, 402px);
+  width: min(100%, 430px);
   height: 508px;
   margin: clamp(32px, calc((100dvh - 508px) / 2), 164px) auto 0;
 }

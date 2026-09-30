@@ -8,12 +8,13 @@ import styles from './GoogleMapsButton.module.css';
 interface Props {
   name: string;
   googleMapsQuery?: string | null;
+  href?: string;
   area?: string | null;
   variant?: 'default' | 'card';
 }
 
-export function GoogleMapsButton({ name, googleMapsQuery, area, variant = 'default' }: Props) {
-  const url = buildGoogleMapsUrl(name, googleMapsQuery, area);
+export function GoogleMapsButton({ name, googleMapsQuery, href, area, variant = 'default' }: Props) {
+  const url = href ?? buildGoogleMapsUrl(name, googleMapsQuery, area);
   if (variant === 'card') {
     return (
       <a className={styles.cardButton} href={url} target="_blank" rel="noopener noreferrer" data-node-id="19:25">

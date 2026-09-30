@@ -1,11 +1,10 @@
 import { AIProvider } from "./provider";
 import { OpenAIProvider } from "./providers/openai";
 import { QwenProvider } from "./providers/qwen";
-import { MockProvider } from "./providers/mock";
 
 export type AIProviderKind = "vision" | "recommendation";
 
-type ProviderName = "openai" | "qwen" | "mock";
+type ProviderName = "openai" | "qwen";
 
 export function getAIProvider(kind: AIProviderKind = "recommendation"): AIProvider {
   const configuredProvider = kind === "vision"
@@ -18,8 +17,6 @@ export function getAIProvider(kind: AIProviderKind = "recommendation"): AIProvid
       return new OpenAIProvider();
     case "qwen":
       return new QwenProvider();
-    case "mock":
-      return new MockProvider();
     default:
       throw new Error(`Unsupported ${kind} AI provider: ${configuredProvider}`);
   }

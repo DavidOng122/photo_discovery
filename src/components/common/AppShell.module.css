@@ -1,0 +1,23 @@
+.shell {
+  position: relative;
+  width: 100%;
+  max-width: 430px;
+  min-height: 100vh;
+  min-height: 100dvh;
+  margin: 0 auto;
+  overflow-x: hidden;
+  background: var(--background);
+  box-shadow: 0 0 24px rgb(31 44 52 / 8%);
+  container-type: inline-size;
+}
+
+.main {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+@media (max-width: 430px) {
+  .shell {
+    box-shadow: none;
+  }
+}

@@ -1,11 +1,14 @@
-import type { ThemeVisualData } from '@/lib/discovery/themeVisuals';
 import styles from './ThemeRecommendationLoading.module.css';
 
-interface Props {
-  tags: ThemeVisualData[];
+interface ThemeLabel {
+  label: string;
 }
 
-const fallbackTags: ThemeVisualData[] = [
+interface Props {
+  tags: ThemeLabel[];
+}
+
+const fallbackTags: ThemeLabel[] = [
   { label: '選んだテーマ' },
 ];
 

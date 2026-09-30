@@ -5,10 +5,10 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  border: 0.667px solid #f3f4f6;
+  border: 1px solid #111;
   border-radius: 15px;
-  background: #fff;
-  color: #000;
+  background: #111;
+  color: #fff;
   font-size: 16px;
   font-weight: 500;
   line-height: 24px;
@@ -18,4 +18,21 @@
 .cardButton img {
   display: block;
   flex: 0 0 20px;
+  filter: invert(1);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .cardButton {
+    transition: background-color 160ms ease, transform 160ms ease;
+  }
+
+  .cardButton:hover {
+    background: #2b2b2b;
+    transform: translateY(-1px);
+  }
+}
+
+.cardButton:focus-visible {
+  outline: 2px solid #467895;
+  outline-offset: 3px;
 }
